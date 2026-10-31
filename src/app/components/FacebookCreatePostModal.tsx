@@ -1,187 +1,308 @@
 import { useRef, useState } from 'react';
-import { X, Globe2, ChevronDown, Users, Smile, MapPin, UserPlus, ImagePlus, CalendarClock, Bot, CircleDashed, Lock, ThumbsUp, MessageCircle, Share2, Upload } from 'lucide-react';
-import type { CommunityPost } from '../types';
-import { CURRENT_USER, img, PHOTOS } from '../data/mockData';
-import { Avatar, Modal, cn } from './Primitives';
-import { TEXT_THEMES } from './CommunityPostCard';
+import { X, Globe2, MapPin, Upload, Video, Clapperboard, Link as LinkIcon } from 'lucide-react';
+import type { ArticleCategory, CommunityPost, StoryReel, TopicStory, UserProfile } from '../types';
+import { Avatar, Modal, SectionLabel, cn } from './Primitives';
 
-const PRESETS = [img(PHOTOS.plantingRice, 600, 600), img(PHOTOS.soilHands, 600, 600), img(PHOTOS.greenhouse, 600, 600), img(PHOTOS.cowsUmbrella, 600, 600)];
-const EMOJIS = ['🌱', '🌾', '🚜', '🔬', '💡'];
-const AUDIENCES = [{ label: 'Public', icon: Globe2 }, { label: 'Friends', icon: Users }, { label: 'Only me', icon: Lock }] as const;
-const TAGS = [
-  { key: 'people', label: 'People', icon: UserPlus, tone: 'text-[#1b74e4]' },
-  { key: 'feeling', label: 'Feeling/activity', icon: Smile, tone: 'text-[#f7b928]' },
-  { key: 'location', label: 'Location', icon: MapPin, tone: 'text-[#f5533d]' },
-  { key: 'collab', label: 'Collaborator', icon: Users, tone: 'text-[#45bd62]' },
-] as const;
-const TAG_TEXT: Record<string, string> = { people: '— with Mehedi Hasan', feeling: '— feeling 🌱 hopeful', location: '— at Trishal, Mymensingh', collab: '— with BAU Agri-Robotics Lab' };
-
-function Toggle({ on, onChange, label }: { on: boolean; onChange: () => void; label: string }) {
-  return (
-    <button role="switch" aria-checked={on} aria-label={label} onClick={onChange} className={cn('relative h-6 w-11 shrink-0 rounded-full transition', on ? 'bg-[#2d88ff]' : 'bg-[#4e4f50]')}>
-      <span className={cn('absolute top-0.5 size-5 rounded-full bg-white shadow transition-all', on ? 'left-[22px]' : 'left-0.5')} />
-    </button>
-  );
+interface Props {
+  open: boolean;
+  onClose: () => void;
+  currentUser: UserProfile | null;
+  onSubmitReel: (reel: StoryReel, story?: TopicStory, feedPost?: CommunityPost) => void;
 }
 
-export function FacebookCreatePostModal({ open, onClose, onSubmit, videoHint }: { open: boolean; onClose: () => void; onSubmit: (p: CommunityPost) => void; videoHint?: boolean }) {
-  const [text, setText] = useState('');
-  const [theme, setTheme] = useState(0);
-  const [showThemes, setShowThemes] = useState(false);
-  const [image, setImage] = useState<string | null>(null);
-  const [tags, setTags] = useState<string[]>([]);
-  const [aiLabel, setAiLabel] = useState(false);
-  const [toStory, setToStory] = useState(false);
-  const [aud, setAud] = useState(0);
+const CATEGORIES: ArticleCategory[] = [
+  'এগ্রি-টেক ও ড্রোন',
+  'শস্য ও কৃষিবিজ্ঞান',
+  'গবেষণা সহজ ভাষায়',
+  'খাদ্য ও কোল্ড চেইন',
+  'জলবায়ু ও স্থায়িত্ব',
+  'স্টার্টআপ ও উদ্ভাবন',
+  'মৎস্য ও প্রাণিসম্পদ',
+];
+
+export function FacebookCreatePostModal({ open, onClose, currentUser, onSubmitReel }: Props) {
+  const [title, setTitle] = useState('');
+  const [caption, setCaption] = useState('');
+  const [location, setLocation] = useState(currentUser?.location || 'ময়মনসিংহ');
+  const [duration, setDuration] = useState('1:15');
+  const [category, setCategory] = useState<ArticleCategory>('এগ্রি-টেক ও ড্রোন');
+  const [mediaUrl, setMediaUrl] = useState('');
+  const [externalLink, setExternalLink] = useState('');
+  const [alsoShareToStories, setAlsoShareToStories] = useState(true);
+  const [alsoShareToFeed, setAlsoShareToFeed] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
-  const Aud = AUDIENCES[aud].icon;
 
-  const reset = () => { setText(''); setTheme(0); setImage(null); setTags([]); setAiLabel(false); setToStory(false); setShowThemes(false); };
-  const canPost = text.trim().length > 0 || !!image;
-  const themed = theme > 0 && !image && text.length < 140;
-  const tagLine = tags.map((t) => TAG_TEXT[t]).join(' ');
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => setMediaUrl(String(reader.result));
+    reader.readAsDataURL(f);
+  };
 
-  const submit = () => {
-    if (!canPost) return;
-    onSubmit({
-      id: `user-${Date.now()}`,
-      author: { name: CURRENT_USER.name, avatar: CURRENT_USER.avatar, role: CURRENT_USER.role },
-      timestamp: 'এইমাত্র',
-      content: text.trim() + (tagLine ? `\n${tagLine}` : ''),
-      images: image ? [image] : undefined,
-      textTheme: themed ? TEXT_THEMES[theme] : undefined,
-      aiLabel,
-      stats: { likes: 0, commentsCount: 0, shares: 0 },
-      reactionsSummary: 'Be the first to react',
-      comments: [],
-    });
-    reset();
+  const canSubmit = title.trim().length > 2 && (mediaUrl.trim().length > 0 || caption.trim().length > 0);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canSubmit) return;
+    const authorId = currentUser?.id || `u-${Date.now().toString(36)}`;
+    const authorName = currentUser?.name || 'Agri Researcher';
+    const authorAvatar = currentUser?.avatar || 'PS';
+    const nowIso = new Date().toISOString();
+
+    const reel: StoryReel = {
+      id: `reel-${Date.now().toString(36)}`,
+      title: title.trim(),
+      creatorId: authorId,
+      creator: authorName,
+      creatorAvatar: authorAvatar,
+      location: location.trim() || 'Bangladesh',
+      duration: duration.trim() || '1:00',
+      views: 1,
+      gradientTheme: 'from-emerald-900 to-lime-700',
+      videoType: 'greenhouse-iot',
+      mediaUrl: mediaUrl.trim(),
+      likes: 0,
+      reactionCounts: {},
+      userReaction: null,
+      createdAt: nowIso,
+    };
+
+    const story: TopicStory | undefined = alsoShareToStories
+      ? {
+          id: `st-${Date.now().toString(36)}`,
+          title: title.trim(),
+          category,
+          imageUrl: mediaUrl.trim(),
+          iconName: 'drone',
+          readsCount: '1',
+          authorId,
+          authorName,
+          authorAvatar,
+          createdAt: nowIso,
+        }
+      : undefined;
+
+    const feedPost: CommunityPost | undefined = alsoShareToFeed
+      ? {
+          id: `post-${Date.now().toString(36)}`,
+          authorId,
+          author: {
+            id: authorId,
+            name: authorName,
+            avatar: authorAvatar,
+            role: `${currentUser?.role || 'Researcher'}${currentUser?.organization ? ` · ${currentUser.organization}` : ''}`,
+            isVerified: true,
+          },
+          timestamp: new Date().toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' }),
+          createdAt: nowIso,
+          content: `${title.trim()}${caption.trim() ? `\n\n${caption.trim()}` : ''}`,
+          images: mediaUrl.trim() ? [mediaUrl.trim()] : [],
+          externalLink: externalLink.trim() || undefined,
+          stats: { likes: 0, commentsCount: 0, shares: 0 },
+          reactionCounts: {},
+          userReaction: null,
+          comments: [],
+        }
+      : undefined;
+
+    onSubmitReel(reel, story, feedPost);
+    setTitle('');
+    setCaption('');
+    setMediaUrl('');
+    setExternalLink('');
     onClose();
   };
 
   return (
-    <Modal open={open} onClose={onClose} className="max-w-[980px]" labelledBy="fb-create-title">
-      <div className="overflow-hidden rounded-t-2xl bg-[#242526] font-sans text-[#E4E6EB] shadow-[0_12px_28px_rgba(0,0,0,.5)] sm:rounded-xl">
-        <div className="relative flex h-[60px] items-center justify-center border-b border-[#3e4042]">
-          <h2 id="fb-create-title" className="text-[20px] font-bold">Create post</h2>
-          <button onClick={onClose} aria-label="Close" className="absolute right-4 flex size-9 items-center justify-center rounded-full bg-[#3a3b3c] text-[#b0b3b8] hover:bg-[#4e4f50]">
+    <Modal open={open} onClose={onClose} className="max-w-[640px]" labelledBy="upload-reel-title">
+      <div className="overflow-hidden rounded-t-2xl border border-pine-900 bg-canvas shadow-tactile-lg sm:rounded-2xl">
+        <div className="flex items-center justify-between border-b border-pine-900 bg-pine-900 px-5 py-3.5 text-canvas">
+          <div className="flex items-center gap-2">
+            <Clapperboard className="size-5 text-[#38b17e]" />
+            <div>
+              <h2 id="upload-reel-title" className="font-display text-[20px] font-semibold">
+                Upload Video Reel / Field Story
+              </h2>
+              <p className="font-mono text-[10.5px] opacity-75">
+                Stored in Supabase · public.reels &amp; public.stories
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+          >
             <X className="size-5" />
           </button>
         </div>
-        <div className="grid lg:grid-cols-[1.1fr_1fr]">
-          {/* Editor */}
-          <div className="flex flex-col gap-3 p-4">
-            <div className="flex items-center gap-2.5">
-              <Avatar src={CURRENT_USER.avatar} name={CURRENT_USER.name} size="size-10" />
-              <div>
-                <p className="text-[15px] font-semibold">{CURRENT_USER.name}</p>
-                <button onClick={() => setAud((a) => (a + 1) % AUDIENCES.length)} className="mt-0.5 flex items-center gap-1 rounded-md bg-[#3a3b3c] px-2 py-0.5 text-[12.5px] font-semibold hover:bg-[#4e4f50]">
-                  <Aud className="size-3" />{AUDIENCES[aud].label}<ChevronDown className="size-3.5" />
-                </button>
+
+        <form onSubmit={submit} className="max-h-[78vh] space-y-4 overflow-y-auto p-5">
+          <div className="flex items-center gap-2.5">
+            <Avatar src={currentUser?.avatar || 'PS'} name={currentUser?.name || 'User'} size="size-10" />
+            <div>
+              <p className="text-[14.5px] font-semibold text-pine-900">
+                {currentUser?.name || 'Agri Researcher'}
+              </p>
+              <p className="flex items-center gap-1 font-mono text-[11px] text-pine-600">
+                Public <Globe2 className="size-3" />
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <SectionLabel className="mb-1">Reel / Story Headline *</SectionLabel>
+            <input
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="যেমন: ৩ মিনিটে মাটির pH মাপার সহজ পদ্ধতি"
+              className="w-full rounded-lg border border-pine-900/25 bg-canvas-card px-3 py-2 font-bangla text-[15px] text-pine-900 outline-none focus:border-pine-900"
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-2.5">
+            <div>
+              <SectionLabel className="mb-1">Category</SectionLabel>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value as ArticleCategory)}
+                className="w-full rounded-lg border border-pine-900/25 bg-canvas-card px-2.5 py-2 font-bangla text-[13px] text-pine-900"
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <SectionLabel className="mb-1">Location</SectionLabel>
+              <div className="flex items-center rounded-lg border border-pine-900/25 bg-canvas-card px-2.5">
+                <MapPin className="size-3.5 text-pine-600" />
+                <input
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="দাকোপ, খুলনা"
+                  className="w-full bg-transparent px-1.5 py-2 font-bangla text-[13px] text-pine-900 outline-none"
+                />
               </div>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {TAGS.map((t) => {
-                const on = tags.includes(t.key);
-                return (
-                  <button key={t.key} onClick={() => setTags((s) => (on ? s.filter((x) => x !== t.key) : [...s, t.key]))} aria-pressed={on}
-                    className={cn('flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12.5px] font-semibold transition', on ? 'border-[#2d88ff] bg-[#263951] text-[#e4e6eb]' : 'border-[#3e4042] text-[#b0b3b8] hover:bg-[#3a3b3c]')}>
-                    <t.icon className={cn('size-4', t.tone)} />{t.label}
-                  </button>
-                );
-              })}
-            </div>
-            <div className={cn('relative rounded-lg transition', themed && cn(TEXT_THEMES[theme], 'flex min-h-[200px] items-center'))}>
-              <textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder={videoHint ? `ভিডিওর ক্যাপশন লিখুন, ${CURRENT_USER.name.split(' ')[0]}…` : `What's on your mind, ${CURRENT_USER.name.split(' ')[0]}?`}
-                rows={themed ? 3 : 4}
-                className={cn('w-full resize-none bg-transparent font-bangla outline-none placeholder:text-[#b0b3b8]', themed ? 'px-6 text-center text-[24px] font-bold text-white placeholder:text-white/70' : 'text-[19px]')}
-                autoFocus
+            <div>
+              <SectionLabel className="mb-1">Duration</SectionLabel>
+              <input
+                value={duration}
+                onChange={(e) => setDuration(e.target.value)}
+                placeholder="1:15"
+                className="w-full rounded-lg border border-pine-900/25 bg-canvas-card px-3 py-2 font-mono text-[13px] text-pine-900 outline-none"
               />
             </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setShowThemes((s) => !s)} aria-label="Text background" className="flex size-9 items-center justify-center rounded-lg bg-gradient-to-br from-[#f107a3] via-[#7b2ff7] to-[#2d88ff] text-[14px] font-bold text-white">Aa</button>
-              {showThemes && TEXT_THEMES.map((t, i) => (
-                <button key={i} onClick={() => setTheme(i)} aria-label={`Theme ${i}`} className={cn('size-7 rounded-md border-2', i === 0 ? 'bg-white' : t, theme === i ? 'border-white' : 'border-transparent')} />
-              ))}
-              <div className="ml-auto flex gap-0.5">
-                {EMOJIS.map((e) => (
-                  <button key={e} onClick={() => setText((t) => t + e)} className="flex size-8 items-center justify-center rounded-full text-[18px] hover:bg-[#3a3b3c]">{e}</button>
-                ))}
-              </div>
-            </div>
+          </div>
 
-            <div className="rounded-lg border border-[#3e4042] p-2">
-              {image ? (
-                <div className="relative">
-                  <img src={image} alt="Selected" className="max-h-[200px] w-full rounded-md object-cover" />
-                  <button onClick={() => setImage(null)} aria-label="Remove image" className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-[#242526] hover:bg-[#3a3b3c]"><X className="size-4" /></button>
-                </div>
-              ) : (
-                <button onClick={() => fileRef.current?.click()} className="flex w-full flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed border-[#4e4f50] bg-[#2f3031] py-5 hover:bg-[#3a3b3c]">
-                  <span className="flex size-10 items-center justify-center rounded-full bg-[#4e4f50]">{videoHint ? <Upload className="size-5" /> : <ImagePlus className="size-5" />}</span>
-                  <span className="text-[14.5px] font-semibold">{videoHint ? 'Add video' : 'Add photos/videos'}</span>
-                  <span className="text-[12px] text-[#b0b3b8]">or drag and drop</span>
-                </button>
-              )}
-              <input ref={fileRef} type="file" accept="image/*,video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) setImage(URL.createObjectURL(f)); }} />
-              <div className="mt-2 grid grid-cols-4 gap-1.5">
-                {PRESETS.map((s) => (
-                  <button key={s} onClick={() => setImage(s)} className={cn('overflow-hidden rounded-md border-2', image === s ? 'border-[#2d88ff]' : 'border-transparent')}>
-                    <img src={s} alt="Field photo preset" className="aspect-square w-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-[#3e4042] px-3 py-1">
-              <div className="flex items-center gap-3 py-2">
-                <Bot className="size-5 text-[#b0b3b8]" />
-                <span className="flex-1"><span className="block text-[14px] font-semibold">Add AI label</span><span className="block text-[12px] text-[#b0b3b8]">Let people know this content was made with AI</span></span>
-                <Toggle on={aiLabel} onChange={() => setAiLabel((a) => !a)} label="Add AI label" />
-              </div>
-              <div className="flex items-center gap-3 border-t border-[#3e4042] py-2">
-                <CircleDashed className="size-5 text-[#b0b3b8]" />
-                <span className="flex-1"><span className="block text-[14px] font-semibold">Share to story</span><span className="block text-[12px] text-[#b0b3b8]">Visible for 24 hours</span></span>
-                <Toggle on={toStory} onChange={() => setToStory((a) => !a)} label="Share to story" />
-              </div>
-            </div>
-
+          <div>
+            <SectionLabel className="mb-1">Visual Media (Upload Photo/Cover or Paste URL)</SectionLabel>
             <div className="flex gap-2">
-              <button className="flex h-9 items-center gap-1.5 rounded-md bg-[#3a3b3c] px-3 text-[14px] font-semibold hover:bg-[#4e4f50]"><CalendarClock className="size-4" />Schedule</button>
-              <button onClick={submit} disabled={!canPost} className="h-9 flex-1 rounded-md bg-[#2d88ff] text-[15px] font-semibold text-white transition hover:bg-[#1877f2] disabled:cursor-not-allowed disabled:bg-[#505151] disabled:text-[#8a8d91]">Post</button>
+              <input
+                value={mediaUrl.startsWith('data:') ? '' : mediaUrl}
+                onChange={(e) => setMediaUrl(e.target.value)}
+                placeholder={mediaUrl.startsWith('data:') ? 'Uploaded visual attached' : 'https://...'}
+                className="flex-1 rounded-lg border border-pine-900/25 bg-canvas-card px-3 py-2 text-[13.5px] text-pine-900 outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-pine-900 bg-canvas-subtle px-3 text-[12.5px] font-semibold text-pine-900 hover:bg-pine-100"
+              >
+                <Upload className="size-4" /> Upload File
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*,video/*"
+                className="hidden"
+                onChange={handleFile}
+              />
+            </div>
+            {mediaUrl && (
+              <div className="relative mt-2">
+                <img src={mediaUrl} alt="Reel preview" className="h-44 w-full rounded-lg object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setMediaUrl('')}
+                  className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <SectionLabel className="mb-1">Field Notes / Description</SectionLabel>
+            <textarea
+              rows={3}
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              placeholder="মাঠ পর্যায়ের পর্যবেক্ষণ বা বিস্তারিত বিবরণ লিখুন…"
+              className="w-full rounded-lg border border-pine-900/25 bg-canvas-card px-3 py-2 font-bangla text-[14.5px] text-pine-900 outline-none focus:border-pine-900"
+            />
+          </div>
+
+          <div>
+            <SectionLabel className="mb-1">External Video / Study Link (Optional)</SectionLabel>
+            <div className="flex items-center rounded-lg border border-pine-900/25 bg-canvas-card px-3">
+              <LinkIcon className="size-4 text-pine-600" />
+              <input
+                value={externalLink}
+                onChange={(e) => setExternalLink(e.target.value)}
+                placeholder="https://..."
+                className="w-full bg-transparent px-2 py-2 font-mono text-[12.5px] text-pine-900 outline-none"
+              />
             </div>
           </div>
 
-          {/* Live preview */}
-          <div className="hidden border-l border-[#3e4042] bg-[#18191a] p-4 lg:block">
-            <p className="mb-3 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider text-[#b0b3b8]"><span className="size-1.5 animate-pulse rounded-full bg-[#45bd62]" />Live preview</p>
-            <div className="overflow-hidden rounded-lg bg-[#242526]">
-              <div className="flex items-center gap-2.5 p-3">
-                <Avatar src={CURRENT_USER.avatar} name={CURRENT_USER.name} size="size-10" />
-                <div>
-                  <p className="text-[14.5px] font-semibold">{CURRENT_USER.name} <span className="font-normal text-[#b0b3b8]">{tagLine}</span></p>
-                  <p className="flex items-center gap-1 text-[12px] text-[#b0b3b8]">Just now · <Aud className="size-3" /></p>
-                </div>
-              </div>
-              {themed && text ? (
-                <div className={cn('flex min-h-[220px] items-center justify-center px-6 text-center font-bangla text-[22px] font-bold text-white', TEXT_THEMES[theme])}>{text}</div>
-              ) : (
-                <p className={cn('whitespace-pre-line px-3 pb-3 font-bangla text-[15px] leading-relaxed', !text && 'italic text-[#8a8d91]')}>{text || 'আপনার লেখা এখানে দেখা যাবে…'}</p>
-              )}
-              {aiLabel && <p className="mx-3 mb-2 inline-flex items-center gap-1 rounded bg-[#3a3b3c] px-1.5 py-0.5 text-[11px] text-[#b0b3b8]"><Bot className="size-3" />AI info</p>}
-              {image && <img src={image} alt="" className="max-h-[300px] w-full object-cover" />}
-              <div className="mx-3 mt-1 grid grid-cols-3 border-t border-[#3e4042] py-1 text-[13.5px] font-semibold text-[#b0b3b8]">
-                <span className="flex items-center justify-center gap-1.5 py-1.5"><ThumbsUp className="size-4" />Like</span>
-                <span className="flex items-center justify-center gap-1.5 py-1.5"><MessageCircle className="size-4" />Comment</span>
-                <span className="flex items-center justify-center gap-1.5 py-1.5"><Share2 className="size-4" />Share</span>
-              </div>
-            </div>
-            {toStory && <p className="mt-3 text-[12px] text-[#b0b3b8]">✓ এটি আপনার স্টোরিতেও শেয়ার হবে</p>}
+          <div className="flex flex-wrap gap-4 rounded-xl border border-canvas-border bg-canvas-subtle p-3 text-[13px] font-semibold text-pine-900">
+            <label className="inline-flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={alsoShareToStories}
+                onChange={(e) => setAlsoShareToStories(e.target.checked)}
+                className="size-4 accent-pine-900"
+              />
+              Include in Topic Stories Carousel
+            </label>
+            <label className="inline-flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={alsoShareToFeed}
+                onChange={(e) => setAlsoShareToFeed(e.target.checked)}
+                className="size-4 accent-pine-900"
+              />
+              Also publish as Feed Update
+            </label>
           </div>
-        </div>
+
+          <div className="flex justify-end gap-2 border-t border-canvas-border pt-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-10 rounded-lg border border-canvas-border px-4 text-[13px] font-semibold text-pine-900/70"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className={cn(
+                'inline-flex h-10 items-center gap-1.5 rounded-lg border border-pine-900 bg-pine-900 px-5 text-[14px] font-semibold text-canvas shadow-tactile-xs disabled:opacity-40',
+              )}
+            >
+              <Video className="size-4" /> Publish to Supabase
+            </button>
+          </div>
+        </form>
       </div>
     </Modal>
   );

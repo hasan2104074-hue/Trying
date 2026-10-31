@@ -1,26 +1,87 @@
+import { useNavigate } from 'react-router';
+import { LOGOS } from '../lib/supabase';
 import { cn } from './Primitives';
 
 export function PlainsytMark({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 40 40" className={cn('shrink-0', className)} aria-hidden>
-      <rect x="1" y="1" width="36" height="36" rx="9" fill="var(--tactile)" />
-      <rect x="0" y="0" width="36" height="36" rx="9" fill="var(--pine-900)" stroke="var(--pine-900)" />
-      <circle cx="18" cy="17" r="6.2" fill="#f2c14e" />
-      <path d="M3 21.5h30" stroke="var(--canvas)" strokeWidth="2.2" strokeLinecap="round" />
-      <path d="M6 26.5c4-1.6 8-2.2 12-2.2s8 .6 12 2.2M9 31c3-1 6-1.4 9-1.4s6 .4 9 1.4" stroke="var(--pine-400)" strokeWidth="1.8" fill="none" strokeLinecap="round" />
-    </svg>
+    <img
+      src={LOGOS.icon}
+      alt="Plainsyt icon"
+      className={cn('shrink-0 rounded-lg border border-pine-900/20 bg-black object-contain', className)}
+    />
   );
 }
 
-export function PlainsytLogo({ compact, className }: { compact?: boolean; className?: string }) {
+export function PlainsytWordmark({
+  lang = 'en',
+  className,
+}: {
+  lang?: 'en' | 'bn';
+  className?: string;
+}) {
   return (
-    <a href="#" className={cn('flex items-center gap-2.5 text-pine-900', className)} aria-label="Plainsyt home">
-      <PlainsytMark className="size-9" />
+    <img
+      src={lang === 'bn' ? LOGOS.banglaWhite : LOGOS.englishWhite}
+      alt={lang === 'bn' ? 'প্লেইনসাইট' : 'Plainsyt'}
+      className={cn('h-5 w-auto object-contain select-none', className)}
+    />
+  );
+}
+
+export function PlainsytLogo({
+  compact,
+  lang = 'en',
+  showBothWordmarks = false,
+  variant = 'pill',
+  onNavigateHome,
+  className,
+}: {
+  compact?: boolean;
+  lang?: 'en' | 'bn';
+  showBothWordmarks?: boolean;
+  variant?: 'pill' | 'on-dark';
+  onNavigateHome?: () => void;
+  className?: string;
+}) {
+  const navigate = useNavigate();
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onNavigateHome?.();
+    navigate('/');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  return (
+    <a
+      href="/"
+      onClick={handleClick}
+      className={cn('group inline-flex items-center gap-2 text-pine-900 focus:outline-none', className)}
+      aria-label="Plainsyt Home"
+    >
+      <PlainsytMark className="size-9 shadow-tactile-xs transition group-hover:-translate-y-0.5" />
       {!compact && (
-        <span className="flex flex-col leading-none">
-          <span className="font-display text-[22px] font-semibold italic tracking-[-0.02em]">Plainsyt</span>
-          <span className="mt-0.5 font-mono text-[9px] tracking-[0.18em] text-pine-600">প্লেইনসাইট · AGRI</span>
-        </span>
+        variant === 'on-dark' ? (
+          <span className="inline-flex items-center gap-2">
+            <PlainsytWordmark lang={lang} className="h-5 sm:h-6" />
+            {showBothWordmarks && (
+              <>
+                <span className="h-3.5 w-px bg-white/30" />
+                <PlainsytWordmark lang={lang === 'en' ? 'bn' : 'en'} className="h-4 opacity-90 sm:h-5" />
+              </>
+            )}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-2 rounded-lg border border-[#04301f] bg-[#04301f] px-2.5 py-1.5 shadow-tactile-xs transition group-hover:bg-[#09472e]">
+            <PlainsytWordmark lang={lang} className="h-4 sm:h-[18px]" />
+            {showBothWordmarks && (
+              <>
+                <span className="hidden h-3.5 w-px bg-white/25 sm:inline-block" />
+                <PlainsytWordmark lang={lang === 'en' ? 'bn' : 'en'} className="hidden h-3.5 opacity-90 sm:inline-block" />
+              </>
+            )}
+          </span>
+        )
       )}
     </a>
   );
