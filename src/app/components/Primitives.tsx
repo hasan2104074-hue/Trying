@@ -1,0 +1,85 @@
+import { useEffect, type ReactNode } from 'react';
+import { X } from 'lucide-react';
+import { clsx } from 'clsx';
+
+export const cn = (...a: (string | false | null | undefined)[]) => clsx(a);
+
+export const CARD = 'rounded-xl border border-pine-900 bg-canvas-card shadow-tactile';
+
+const TONES = ['bg-pine-100 text-pine-800', 'bg-[#f6e7c8] text-[#6b4a12]', 'bg-[#e8e1f5] text-[#3d2b6b]', 'bg-[#fbe1d8] text-[#7a2e16]', 'bg-[#dcecf5] text-[#163f5c]'];
+
+export function Avatar({
+  src, name, size = 'size-10', online, ring, className,
+}: { src: string; name?: string; size?: string; online?: boolean; ring?: boolean; className?: string }) {
+  const isUrl = src.startsWith('http') || src.startsWith('blob:');
+  const tone = TONES[(src.charCodeAt(0) + (src.charCodeAt(1) || 0)) % TONES.length];
+  return (
+    <span className={cn('relative inline-flex shrink-0', size, className)}>
+      <span
+        className={cn(
+          'flex size-full items-center justify-center overflow-hidden rounded-full font-semibold text-[0.7em] leading-none',
+          ring ? 'ring-2 ring-pine-500 ring-offset-2 ring-offset-canvas-card' : 'border border-pine-900/15',
+          !isUrl && tone,
+        )}
+      >
+        {isUrl ? <img src={src} alt={name ?? ''} className="size-full object-cover text-transparent" /> : <span className="text-[13px]">{src}</span>}
+      </span>
+      {online && (
+        <span className="absolute bottom-0 right-0 size-[28%] min-h-2.5 min-w-2.5 rounded-full border-2 border-canvas-card bg-[#31a24c]" />
+      )}
+    </span>
+  );
+}
+
+export function VerifiedBadge() {
+  return (
+    <svg viewBox="0 0 16 16" className="inline size-3.5 shrink-0 text-pine-500" aria-label="Verified">
+      <path fill="currentColor" d="M8 0l2 1.6 2.5-.2.7 2.4 2.2 1.3-.9 2.4.9 2.4-2.2 1.3-.7 2.4-2.5-.2L8 16l-2-1.6-2.5.2-.7-2.4L.6 10.9l.9-2.4-.9-2.4 2.2-1.3.7-2.4 2.5.2z" />
+      <path fill="none" stroke="var(--canvas-card)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" d="M5 8.2l2 2 4-4.2" />
+    </svg>
+  );
+}
+
+export function Modal({
+  open, onClose, children, className, labelledBy,
+}: { open: boolean; onClose: () => void; children: ReactNode; className?: string; labelledBy?: string }) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open, onClose]);
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby={labelledBy}>
+      <button aria-label="Close" className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" onClick={onClose} />
+      <div className={cn('relative max-h-[100dvh] w-full overflow-y-auto sm:max-h-[92vh]', className)}>{children}</div>
+    </div>
+  );
+}
+
+export function CloseButton({ onClick, className }: { onClick: () => void; className?: string }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label="Close"
+      className={cn('flex size-9 items-center justify-center rounded-full bg-canvas-subtle text-pine-900 transition hover:bg-pine-100', className)}
+    >
+      <X className="size-5" />
+    </button>
+  );
+}
+
+export function SectionLabel({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <p className={cn('font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-pine-600', className)}>{children}</p>
+  );
+}
+
+export const FEED_CARD =
+  'border-y border-pine-900/80 bg-canvas-card sm:rounded-xl sm:border sm:border-pine-900 sm:shadow-tactile';
