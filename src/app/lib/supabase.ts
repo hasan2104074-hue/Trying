@@ -13,9 +13,12 @@ export const SUPABASE_PUBLISHABLE_KEY =
 export const BKASH_RECEIVER_NUMBER = '01771047033' as const;
 
 export const LOGOS = {
-  banglaWhite: 'https://i.postimg.cc/PLgRsfZL/Bangla.png',
-  englishWhite: 'https://i.postimg.cc/kV0p3M8X/English.png',
-  icon: 'https://i.postimg.cc/wtyGGRtH/icon.png',
+  banglaWhite: '/logos/Bangla.png',
+  englishWhite: '/logos/English.png',
+  icon: '/logos/icon.png',
+  cdnBanglaWhite: 'https://i.postimg.cc/PLgRsfZL/Bangla.png',
+  cdnEnglishWhite: 'https://i.postimg.cc/kV0p3M8X/English.png',
+  cdnIcon: 'https://i.postimg.cc/wtyGGRtH/icon.png',
 } as const;
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {

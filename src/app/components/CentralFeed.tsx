@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { Database, PenLine, Sparkles, UserPlus, Video } from 'lucide-react';
+import { PenLine, Video, UserPlus, FileText } from 'lucide-react';
 import type {
   Article, CommunityPost, LinkedInReactionType, ReactionTargetType, StoryReel, TopicStory, UserProfile,
 } from '../types';
@@ -24,7 +24,6 @@ export interface FeedApi {
   onUploadVideo: () => void;
   onAskAI: () => void;
   onOpenProfileSettings: () => void;
-  onOpenSupabaseConsole: () => void;
   onOpenStory: (i: number) => void;
   onCreateStory: () => void;
   onOpenArticlePopup: (id: string) => void;
@@ -115,7 +114,7 @@ export function CentralFeed(f: FeedApi) {
   const isEmpty = f.articles.length === 0 && f.posts.length === 0 && f.reels.length === 0;
 
   return (
-    <div className="flex flex-col gap-2 sm:gap-5">
+    <div className="flex flex-col gap-3 sm:gap-5">
       <PostCreatorBar
         currentUser={f.currentUser}
         onWriteArticle={f.onWriteArticle}
@@ -137,46 +136,39 @@ export function CentralFeed(f: FeedApi) {
       </div>
 
       {isEmpty ? (
-        <section className={cn(FEED_CARD, 'p-6 text-center sm:p-8')}>
-          <span className="mx-auto flex size-12 items-center justify-center rounded-full border border-pine-900 bg-pine-100 text-pine-800">
-            <Database className="size-6" />
+        <section className={cn(FEED_CARD, 'p-6 text-center sm:p-10')}>
+          <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-[#00ED64]/15 text-[#061621] border border-[#00ED64]/30">
+            <FileText className="size-6 text-[#061621]" />
           </span>
-          <h2 className="mt-3 font-display text-[24px] font-bold text-pine-950">
-            100% Live Supabase Feed — Zero Fake Data
+          <h2 className="mt-4 font-sans text-xl font-bold text-slate-900">
+            এখনো কোনো প্রকাশনা নেই
           </h2>
-          <p className="mx-auto mt-1.5 max-w-[460px] font-bangla text-[14.5px] leading-relaxed text-pine-900/70">
-            এই প্ল্যাটফর্মে কোনো হার্ডকোডেড বা ফেক ডেটা নেই। আপনার প্রোফাইল তৈরি করুন এবং প্রথম প্রতিবেদন বা ভিডিও রিল প্রকাশ করুন — সব ডেটা সরাসরি Supabase-এ সংরক্ষিত হবে।
+          <p className="mx-auto mt-2 max-w-md font-sans text-sm leading-relaxed text-slate-600">
+            আপনার চিন্তাভাবনা, গবেষণা বা অভিজ্ঞতা তুলে ধরে প্রথম প্রতিবেদনটি লিখুন অথবা কমিউনিটিতে নতুন পোস্ট দিন।
           </p>
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             {!f.currentUser && (
               <button
                 type="button"
                 onClick={f.onOpenProfileSettings}
-                className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-pine-900 bg-pine-900 px-4 text-[13.5px] font-semibold text-canvas shadow-tactile-xs shadow-tactile-hover"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#00ED64] px-4 text-xs font-bold text-[#061621] hover:bg-[#00d859] transition shadow-xs"
               >
-                <UserPlus className="size-4" /> Create Your Profile First
+                <UserPlus className="size-3.5" /> প্রোফাইল তৈরি করুন
               </button>
             )}
             <button
               type="button"
               onClick={f.onWriteArticle}
-              className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-pine-900 bg-canvas-card px-4 text-[13.5px] font-semibold text-pine-900 shadow-tactile-xs shadow-tactile-hover"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-800 hover:bg-slate-50 transition shadow-xs"
             >
-              <PenLine className="size-4 text-pine-600" /> Write First Article
+              <PenLine className="size-3.5 text-slate-500" /> নতুন প্রতিবেদন লিখুন
             </button>
             <button
               type="button"
               onClick={f.onUploadVideo}
-              className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-pine-900 bg-canvas-card px-4 text-[13.5px] font-semibold text-pine-900 shadow-tactile-xs shadow-tactile-hover"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-800 hover:bg-slate-50 transition shadow-xs"
             >
-              <Video className="size-4 text-[#e41e3f]" /> Upload Video / Story
-            </button>
-            <button
-              type="button"
-              onClick={f.onOpenSupabaseConsole}
-              className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-pine-900/35 bg-canvas-subtle px-3.5 font-mono text-[12px] font-semibold text-pine-900 hover:border-pine-900"
-            >
-              <Sparkles className="size-3.5 text-pine-600" /> Supabase SQL &amp; Status
+              <Video className="size-3.5 text-rose-500" /> রিলস আপলোড
             </button>
           </div>
         </section>
@@ -184,12 +176,11 @@ export function CentralFeed(f: FeedApi) {
         stream
       )}
 
-      <div className="flex flex-col items-center gap-2 py-6 text-center">
-        <span className="font-display text-[22px] italic text-pine-900/40">— শেষ —</span>
-        <p className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-pine-600">
-          Synced with Supabase · fycghkjzodjrqornkton
-        </p>
-      </div>
+      {!isEmpty && (
+        <div className="flex flex-col items-center gap-1 py-8 text-center text-slate-400">
+          <span className="font-sans text-xs italic tracking-wider">— সব আপডেট দেখা শেষ —</span>
+        </div>
+      )}
       <Footer compact className="pb-8 text-center lg:hidden" />
     </div>
   );

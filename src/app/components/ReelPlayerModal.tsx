@@ -38,7 +38,7 @@ export function ReelPlayerModal({ items, start, onClose, onShare }: { items: Pla
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, idx]);
 
-  if (!items) return null;
+  if (!items || items.length === 0 || !items[idx]) return null;
   const it = items[idx];
   const isLiked = liked[it.id];
 

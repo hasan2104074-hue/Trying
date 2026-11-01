@@ -1,38 +1,47 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { LOGOS } from '../lib/supabase';
 import { cn } from './Primitives';
 
 export function PlainsytMark({ className }: { className?: string }) {
+  const [src, setSrc] = useState<string>(LOGOS.icon);
+
   return (
     <img
-      src={LOGOS.icon}
-      alt="Plainsyt icon"
-      className={cn('shrink-0 rounded-lg border border-pine-900/20 bg-black object-contain', className)}
+      src={src}
+      onError={() => {
+        if (src !== LOGOS.cdnIcon) setSrc(LOGOS.cdnIcon);
+      }}
+      alt="Plainsyt BD"
+      className={cn('shrink-0 rounded-lg object-contain', className)}
     />
   );
 }
 
 export function PlainsytWordmark({
-  lang = 'en',
+  lang = 'bn',
   className,
 }: {
   lang?: 'en' | 'bn';
   className?: string;
 }) {
+  const defaultSrc = lang === 'bn' ? LOGOS.banglaWhite : LOGOS.englishWhite;
+  const cdnSrc = lang === 'bn' ? LOGOS.cdnBanglaWhite : LOGOS.cdnEnglishWhite;
+  const [src, setSrc] = useState<string>(defaultSrc);
+
   return (
     <img
-      src={lang === 'bn' ? LOGOS.banglaWhite : LOGOS.englishWhite}
+      src={src}
+      onError={() => {
+        if (src !== cdnSrc) setSrc(cdnSrc);
+      }}
       alt={lang === 'bn' ? 'প্লেইনসাইট' : 'Plainsyt'}
-      className={cn('h-5 w-auto object-contain select-none', className)}
+      className={cn('h-8 w-auto object-contain select-none', className)}
     />
   );
 }
 
 export function PlainsytLogo({
-  compact,
-  lang = 'en',
-  showBothWordmarks = false,
-  variant = 'pill',
   onNavigateHome,
   className,
 }: {
@@ -56,33 +65,18 @@ export function PlainsytLogo({
     <a
       href="/"
       onClick={handleClick}
-      className={cn('group inline-flex items-center gap-2 text-pine-900 focus:outline-none', className)}
+      className={cn('inline-flex items-center focus:outline-none transition-transform hover:opacity-95 active:scale-95', className)}
       aria-label="Plainsyt Home"
     >
-      <PlainsytMark className="size-9 shadow-tactile-xs transition group-hover:-translate-y-0.5" />
-      {!compact && (
-        variant === 'on-dark' ? (
-          <span className="inline-flex items-center gap-2">
-            <PlainsytWordmark lang={lang} className="h-5 sm:h-6" />
-            {showBothWordmarks && (
-              <>
-                <span className="h-3.5 w-px bg-white/30" />
-                <PlainsytWordmark lang={lang === 'en' ? 'bn' : 'en'} className="h-4 opacity-90 sm:h-5" />
-              </>
-            )}
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-2 rounded-lg border border-[#04301f] bg-[#04301f] px-2.5 py-1.5 shadow-tactile-xs transition group-hover:bg-[#09472e]">
-            <PlainsytWordmark lang={lang} className="h-4 sm:h-[18px]" />
-            {showBothWordmarks && (
-              <>
-                <span className="hidden h-3.5 w-px bg-white/25 sm:inline-block" />
-                <PlainsytWordmark lang={lang === 'en' ? 'bn' : 'en'} className="hidden h-3.5 opacity-90 sm:inline-block" />
-              </>
-            )}
-          </span>
-        )
-      )}
+      {/* Mobile view ONLY: green bd icon */}
+      <div className="flex items-center md:hidden">
+        <PlainsytMark className="size-8 rounded-lg border border-[#061621]/20 shadow-sm" />
+      </div>
+
+      {/* Desktop view ONLY: Plainsyt Bangla Logo, NO background, single logo */}
+      <div className="hidden md:flex items-center">
+        <PlainsytWordmark lang="bn" className="h-8 lg:h-9" />
+      </div>
     </a>
   );
 }

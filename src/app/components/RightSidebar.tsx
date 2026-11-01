@@ -1,4 +1,5 @@
-import { MapPin, Users, Check, MessageCircle, Eye, ExternalLink, Plus } from 'lucide-react';
+import React from 'react';
+import { MapPin, Users, Check, MessageCircle, Eye, ExternalLink, Calendar } from 'lucide-react';
 import type { Article, UpcomingEvent, UserProfile } from '../types';
 import { Avatar, CARD, SectionLabel, cn } from './Primitives';
 import { SeeAllLink } from './Header';
@@ -11,12 +12,12 @@ interface Props {
   currentUserId: string;
   followingIds: string[];
   onToggleEvent: (id: string) => void;
+  onOpenRegister?: (event: UpcomingEvent) => void;
   onToggleFollow: (id: string) => void;
   onOpenArticlePopup: (id: string) => void;
   onNavigateProfile: (userId: string) => void;
   onNavigate: (path: string) => void;
   onOpenPhoto?: (src: string, title?: string, authorName?: string, authorId?: string) => void;
-  onOpenAddEvent?: () => void;
 }
 
 export function TrendingList({
@@ -35,39 +36,39 @@ export function TrendingList({
         totalReactions(b.reactionCounts, b.stats.likes) * 5 -
         (a.stats.views + totalReactions(a.reactionCounts, a.stats.likes) * 5),
     )
-    .slice(0, 5);
+    .slice(0, 4);
 
   if (ranked.length === 0) {
     return (
-      <p className="py-5 text-center font-bangla text-[13px] text-pine-900/55">
-        এখনো কোনো ট্রেন্ডিং প্রতিবেদন নেই — প্রথম প্রতিবেদনটি প্রকাশ করুন।
+      <p className="py-4 text-center font-sans text-xs text-slate-400">
+        কোনো ট্রেন্ডিং প্রতিবেদন পাওয়া যায়নি।
       </p>
     );
   }
 
   return (
-    <ol className="divide-y divide-canvas-border">
+    <ol className="divide-y divide-slate-100">
       {ranked.map((a, idx) => (
-        <li key={a.id} className="group flex items-start gap-2.5 py-3">
+        <li key={a.id} className="group flex items-start gap-2 py-2.5">
           <button
             type="button"
             onClick={() => onOpenPopup(a.id)}
-            className="flex min-w-0 flex-1 items-start gap-2.5 text-left"
+            className="flex min-w-0 flex-1 items-start gap-2 text-left"
           >
-            <span className="w-6 shrink-0 font-display text-[23px] font-semibold italic leading-none text-pine-900/25 transition group-hover:text-pine-500">
+            <span className="w-5 shrink-0 font-display text-lg font-bold text-slate-300 group-hover:text-emerald-500 transition-colors">
               {String(idx + 1).padStart(2, '0')}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="line-clamp-2 font-bangla text-[13.5px] font-semibold leading-snug text-pine-900 group-hover:underline">
+              <span className="line-clamp-2 font-sans text-xs font-semibold leading-snug text-slate-900 group-hover:text-emerald-700">
                 {a.title}
               </span>
-              <span className="mt-1 flex items-center gap-2.5 font-mono text-[10.5px] text-pine-600">
-                <span className="flex items-center gap-1">
-                  <Eye className="size-3" />
+              <span className="mt-1 flex items-center gap-2 font-mono text-[10px] text-slate-400">
+                <span className="flex items-center gap-0.5">
+                  <Eye className="size-2.5" />
                   {formatBengaliNumberCompact(a.stats.views)}
                 </span>
-                <span className="flex items-center gap-1">
-                  <MessageCircle className="size-3" />
+                <span className="flex items-center gap-0.5">
+                  <MessageCircle className="size-2.5" />
                   {toBengaliNumerals(a.stats.commentsCount)}
                 </span>
               </span>
@@ -79,24 +80,11 @@ export function TrendingList({
               href={`/article/${a.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              title="Open in separate tab"
-              className="inline-flex items-center gap-1 rounded border border-pine-900/25 bg-canvas-subtle px-1.5 py-0.5 font-mono text-[9.5px] font-semibold text-pine-800 hover:border-pine-900 hover:bg-pine-100"
+              title="নতুন ট্যাবে খুলুন"
+              className="inline-flex items-center gap-0.5 rounded border border-slate-200 bg-slate-50 px-1 py-0.5 font-mono text-[9px] font-medium text-slate-600 hover:bg-slate-100"
             >
-              Tab <ExternalLink className="size-2.5" />
+              Tab <ExternalLink className="size-2" />
             </a>
-            {a.coverImageUrl && (
-              <button
-                type="button"
-                onClick={() => onOpenPhoto?.(a.coverImageUrl!, a.title, a.author.name, a.authorId)}
-                className="overflow-hidden rounded-md border border-pine-900/15"
-              >
-                <img
-                  src={a.coverImageUrl}
-                  alt={a.title}
-                  className="size-10 object-cover transition hover:scale-105"
-                />
-              </button>
-            )}
           </div>
         </li>
       ))}
@@ -104,58 +92,89 @@ export function TrendingList({
   );
 }
 
-export function EventRow({ e, onToggle }: { e: UpcomingEvent; onToggle: () => void }) {
+export function EventRow({
+  e,
+  onNavigate,
+  onOpenRegister,
+}: {
+  e: UpcomingEvent;
+  onNavigate: (path: string) => void;
+  onOpenRegister?: (event: UpcomingEvent) => void;
+}) {
   return (
-    <li className="flex gap-3 py-3">
-      <span className="flex w-12 shrink-0 self-start flex-col items-center overflow-hidden rounded-md border border-pine-900 bg-canvas-card text-center shadow-tactile-xs">
-        <span className="w-full bg-pine-900 py-0.5 font-mono text-[9.5px] font-semibold tracking-widest text-canvas">
+    <li className="flex gap-2.5 py-2.5">
+      <button
+        type="button"
+        onClick={() => onNavigate(`/events/${e.id}`)}
+        className="flex w-10 shrink-0 self-start flex-col items-center overflow-hidden rounded-md border border-slate-200 bg-white text-center shadow-xs hover:border-[#00ED64] transition"
+      >
+        <span className="w-full bg-[#061621] py-0.5 font-mono text-[8.5px] font-bold text-[#00ED64]">
           {e.dateMonth}
         </span>
-        <span className="py-1 font-display text-[20px] font-bold leading-none text-pine-900">{e.dateDay}</span>
-      </span>
+        <span className="py-0.5 font-display text-base font-bold leading-none text-slate-800">
+          {e.dateDay}
+        </span>
+      </button>
       <span className="min-w-0 flex-1">
-        <span className="block text-[13.5px] font-semibold leading-snug text-pine-900">{e.title}</span>
-        <span className="mt-1 flex items-center gap-1 text-[11.5px] text-pine-900/60">
-          <MapPin className="size-3" />
-          {e.location}
-        </span>
-        <span className="mt-0.5 flex items-center gap-1 font-mono text-[10.5px] text-pine-600">
-          <Users className="size-3" />
-          {e.attendeesCount}
-        </span>
         <button
           type="button"
-          onClick={onToggle}
-          aria-pressed={e.isRegistered}
-          className={cn(
-            'mt-2 inline-flex h-7 items-center gap-1 rounded-md border border-pine-900 px-2.5 text-[12px] font-semibold shadow-tactile-xs shadow-tactile-hover',
-            e.isRegistered ? 'bg-pine-100 text-pine-800' : 'bg-pine-900 text-canvas',
-          )}
+          onClick={() => onNavigate(`/events/${e.id}`)}
+          className="block text-left text-xs font-semibold leading-snug text-slate-900 hover:text-emerald-700 hover:underline"
         >
-          {e.isRegistered ? (
-            <>
-              <Check className="size-3.5" />
-              Registered
-            </>
-          ) : (
-            'Register'
-          )}
+          {e.title}
         </button>
+        <span className="mt-0.5 flex items-center gap-1 text-[10.5px] text-slate-500">
+          <MapPin className="size-2.5 shrink-0" />
+          <span className="truncate">{e.location}</span>
+        </span>
+        <span className="mt-0.5 flex items-center gap-1 font-mono text-[10px] text-slate-400">
+          <Users className="size-2.5" />
+          {e.attendeesCount} নিবন্ধিত
+        </span>
+        <div className="mt-1.5 flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => onOpenRegister ? onOpenRegister(e) : onNavigate(`/events/${e.id}`)}
+            className={cn(
+              'inline-flex h-6 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition',
+              e.isRegistered
+                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                : 'bg-[#00ED64] text-[#061621] hover:bg-[#00d859] font-bold',
+            )}
+          >
+            {e.isRegistered ? (
+              <>
+                <Check className="size-3" />
+                নিবন্ধিত
+              </>
+            ) : (
+              'নিবন্ধন করুন'
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate(`/events/${e.id}`)}
+            className="text-[10px] text-slate-500 hover:text-slate-900 hover:underline px-1"
+          >
+            বিস্তারিত
+          </button>
+        </div>
       </span>
     </li>
   );
 }
 
 export function RightSidebar(p: Props) {
-  const otherProfiles = p.profiles.filter((u) => u.id !== p.currentUserId).slice(0, 5);
+  // Only display real backend profiles if available; do not show fake mock users
+  const otherProfiles = p.profiles.filter((u) => u.id !== p.currentUserId && !u.id.startsWith('mock_')).slice(0, 4);
 
   return (
-    <aside className="hidden lg:block">
-      <div className="sticky top-[80px] flex max-h-[calc(100vh-96px)] flex-col gap-5 overflow-y-auto no-scrollbar pb-6 pl-1 pr-1">
-        <section className={cn(CARD, 'px-4 pb-1 pt-4')}>
-          <div className="flex items-baseline justify-between">
-            <h3 className="font-display text-[19px] font-semibold text-pine-900">Trending Now</h3>
-            <SectionLabel>Popup · New Tab</SectionLabel>
+    <aside className="hidden lg:block w-60 shrink-0">
+      <div className="sticky top-[76px] flex max-h-[calc(100vh-90px)] flex-col gap-3.5 overflow-y-auto no-scrollbar pb-6 pl-1 pr-1">
+        <section className={cn(CARD, 'p-3')}>
+          <div className="flex items-baseline justify-between mb-1">
+            <h3 className="font-sans text-sm font-bold text-slate-900">ট্রেন্ডিং</h3>
+            <SectionLabel className="text-[10px]">জনপ্রিয়</SectionLabel>
           </div>
           <TrendingList
             articles={p.articles}
@@ -164,67 +183,54 @@ export function RightSidebar(p: Props) {
           />
         </section>
 
-        <section className={cn(CARD, 'px-4 pb-2 pt-4')}>
-          <div className="flex items-baseline justify-between">
-            <h3 className="font-display text-[19px] font-semibold text-pine-900">Upcoming Events</h3>
-            <div className="flex items-center gap-2">
-              {p.onOpenAddEvent && (
-                <button
-                  type="button"
-                  onClick={p.onOpenAddEvent}
-                  className="inline-flex items-center gap-0.5 font-mono text-[10px] font-semibold uppercase text-pine-700 hover:underline"
-                >
-                  <Plus className="size-3" /> Add
-                </button>
-              )}
-              <SeeAllLink onClick={() => p.onNavigate('/events')}>All</SeeAllLink>
-            </div>
+        <section className={cn(CARD, 'p-3')}>
+          <div className="flex items-baseline justify-between mb-1">
+            <h3 className="font-sans text-sm font-bold text-slate-900">আসন্ন ইভেন্ট</h3>
+            <SeeAllLink onClick={() => p.onNavigate('/events')}>সব দেখুন</SeeAllLink>
           </div>
           {p.events.length === 0 ? (
-            <p className="py-5 text-center font-bangla text-[13px] text-pine-900/55">
-              কোনো ইভেন্ট তালিকাভুক্ত নেই।
+            <p className="py-4 text-center font-sans text-xs text-slate-400">
+              কোনো আসন্ন ইভেন্ট নেই।
             </p>
           ) : (
-            <ul className="divide-y divide-canvas-border">
-              {p.events.slice(0, 4).map((e) => (
-                <EventRow key={e.id} e={e} onToggle={() => p.onToggleEvent(e.id)} />
+            <ul className="divide-y divide-slate-100">
+              {p.events.slice(0, 3).map((e) => (
+                <EventRow
+                  key={e.id}
+                  e={e}
+                  onNavigate={p.onNavigate}
+                  onOpenRegister={p.onOpenRegister}
+                />
               ))}
             </ul>
           )}
         </section>
 
-        <section className={cn(CARD, 'px-4 pb-2 pt-4')}>
-          <h3 className="font-display text-[19px] font-semibold text-pine-900">Who to Follow</h3>
-          {otherProfiles.length === 0 ? (
-            <p className="py-5 text-center font-bangla text-[13px] text-pine-900/55">
-              নতুন গবেষক প্রোফাইল তৈরি হলে এখানে দেখা যাবে।
-            </p>
-          ) : (
-            <ul className="mt-1 divide-y divide-canvas-border">
+        {otherProfiles.length > 0 && (
+          <section className={cn(CARD, 'p-3')}>
+            <h3 className="font-sans text-sm font-bold text-slate-900 mb-2">অনুসরণ করুন</h3>
+            <ul className="divide-y divide-slate-100">
               {otherProfiles.map((s) => {
                 const isFollowing = p.followingIds.includes(s.id);
                 return (
-                  <li key={s.id} className="flex items-center gap-3 py-3">
+                  <li key={s.id} className="flex items-center gap-2 py-2">
                     <button
                       type="button"
                       onClick={() => p.onNavigateProfile(s.id)}
                       className="shrink-0"
                     >
-                      <Avatar src={s.avatar || 'PS'} name={s.name} size="size-10" />
+                      <Avatar src={s.avatar || 'PS'} name={s.name} size="size-7" />
                     </button>
                     <span className="min-w-0 flex-1">
                       <button
                         type="button"
                         onClick={() => p.onNavigateProfile(s.id)}
-                        className="block truncate text-left text-[13.5px] font-semibold text-pine-900 hover:underline"
+                        className="block truncate text-left text-xs font-semibold text-slate-900 hover:underline"
                       >
                         {s.name}
                       </button>
-                      <span className="block truncate text-[11.5px] text-pine-900/60">
-                        {s.focusArea || s.role}
-                      </span>
-                      <span className="block font-mono text-[10px] text-pine-600">
-                        {s.organization} · {s.publicationsCount} pubs
+                      <span className="block truncate text-[10px] text-slate-400">
+                        {s.focusArea || s.role || 'লেখক'}
                       </span>
                     </span>
                     <button
@@ -232,20 +238,20 @@ export function RightSidebar(p: Props) {
                       onClick={() => p.onToggleFollow(s.id)}
                       aria-pressed={isFollowing}
                       className={cn(
-                        'h-7 shrink-0 rounded-full border border-pine-900 px-3 text-[12px] font-semibold transition',
+                        'h-6 shrink-0 rounded-full px-2.5 text-[10px] font-semibold transition',
                         isFollowing
-                          ? 'bg-canvas-subtle text-pine-900'
-                          : 'bg-pine-900 text-canvas hover:bg-pine-700',
+                          ? 'bg-slate-100 text-slate-600'
+                          : 'bg-[#00ED64] text-[#061621] hover:bg-[#00d859]',
                       )}
                     >
-                      {isFollowing ? 'Following' : 'Follow'}
+                      {isFollowing ? 'যুক্ত' : 'ফলো'}
                     </button>
                   </li>
                 );
               })}
             </ul>
-          )}
-        </section>
+          </section>
+        )}
       </div>
     </aside>
   );

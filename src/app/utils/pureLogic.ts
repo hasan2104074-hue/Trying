@@ -67,7 +67,8 @@ export const applyReactionChange = (
   return next;
 };
 
-export const toBengaliNumerals = (num: number | string): string => {
+export const toBengaliNumerals = (num: number | string | undefined | null): string => {
+  if (num === null || num === undefined || num === '') return '০';
   const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
   return num
     .toString()
@@ -79,14 +80,16 @@ export const toBengaliNumerals = (num: number | string): string => {
     .join('');
 };
 
-export const formatBengaliNumberCompact = (num: number): string => {
-  if (num >= 1000000) {
-    return `${toBengaliNumerals((num / 1000000).toFixed(1))}M`;
+export const formatBengaliNumberCompact = (num: number | undefined | null): string => {
+  const n = Number(num);
+  if (isNaN(n) || n <= 0) return '০';
+  if (n >= 1000000) {
+    return `${toBengaliNumerals((n / 1000000).toFixed(1))}M`;
   }
-  if (num >= 1000) {
-    return `${toBengaliNumerals((num / 1000).toFixed(1))}k`;
+  if (n >= 1000) {
+    return `${toBengaliNumerals((n / 1000).toFixed(1))}k`;
   }
-  return toBengaliNumerals(num);
+  return toBengaliNumerals(n);
 };
 
 export const toggleBookmarkId = (existingIds: string[], targetId: string): string[] => {

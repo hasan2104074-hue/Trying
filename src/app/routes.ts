@@ -15,6 +15,10 @@ export const router = createBrowserRouter([
     Component: RootShell,
   },
   {
+    path: '/events/:eventId',
+    Component: RootShell,
+  },
+  {
     path: '/store',
     Component: RootShell,
   },

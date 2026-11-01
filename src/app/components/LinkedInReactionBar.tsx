@@ -143,6 +143,18 @@ export function LinkedInReactionPickerButton({
 
   const activeMeta = userReaction ? getReactionMeta(userReaction) : null;
 
+  const touchTimer = useRef<number>();
+
+  const handleTouchStart = () => {
+    touchTimer.current = window.setTimeout(() => {
+      openMenu();
+    }, 320);
+  };
+
+  const handleTouchEnd = () => {
+    window.clearTimeout(touchTimer.current);
+  };
+
   return (
     <div
       className="relative inline-flex"
@@ -190,11 +202,14 @@ export function LinkedInReactionPickerButton({
 
       <button
         type="button"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
         onClick={() => onSelect(userReaction ?? 'like')}
         aria-pressed={!!userReaction}
         style={activeMeta ? { color: activeMeta.color } : undefined}
         className={cn(
-          'flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 font-semibold transition hover:bg-canvas-subtle',
+          'flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 font-semibold transition hover:bg-canvas-subtle select-none',
           compact ? 'text-[12px] px-2 py-1' : 'text-[13.5px]',
           !activeMeta && 'text-pine-900/70',
           className,

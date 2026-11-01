@@ -30,15 +30,18 @@ import { CreatePostModal } from './CreatePostModal';
 import { ExploreView, EventsView, StoreView, IdeasView, NotificationsView, ProfileView } from './Views';
 import { PhotoLightboxModal } from './PhotoLightboxModal';
 import { ProfileSettingsModal } from './ProfileSettingsModal';
-import { SupabaseConsoleModal } from './SupabaseConsoleModal';
 import { BkashCheckoutModal, CreateProductModal } from './BkashCheckoutModal';
 import { ReactionBreakdownModal } from './LinkedInReactionBar';
+import { SiteLoader } from './SiteLoader';
+import { EventRegistrationModal } from './EventRegistrationModal';
+import { EventDetailPage } from './EventDetailPage';
+import { Footer } from './Footer';
 import { FEED_CARD, cn } from './Primitives';
 
 export function RootShell() {
   const location = useLocation();
   const navigate = useNavigate();
-  const params = useParams<{ userId?: string; articleId?: string }>();
+  const params = useParams<{ userId?: string; articleId?: string; eventId?: string }>();
 
   const [snap, setSnap] = useState<DatabaseSnapshot>(() => readSnapshot());
   const [supaStatus, setSupaStatus] = useState<SupabaseConnectionStatus>('checking');
@@ -51,9 +54,9 @@ export function RootShell() {
   const [aiOpen, setAiOpen] = useState(false);
   const [savedOpen, setSavedOpen] = useState(false);
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(false);
-  const [supaConsoleOpen, setSupaConsoleOpen] = useState(false);
   const [createProductOpen, setCreateProductOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [registrationEvent, setRegistrationEvent] = useState<UpcomingEvent | null>(null);
   const [readerId, setReaderId] = useState<string | null>(null);
   const [player, setPlayer] = useState<{ items: PlayerItem[]; start: number } | null>(null);
   const [lightbox, setLightbox] = useState<LightboxPayload | null>(null);
@@ -599,24 +602,26 @@ export function RootShell() {
       );
     }
 
+    if (location.pathname.startsWith('/events/') && location.pathname !== '/events') {
+      const eventId = location.pathname.replace('/events/', '');
+      return (
+        <EventDetailPage
+          eventId={eventId}
+          onNavigate={goNavigate}
+          onOpenRegister={(ev) => setRegistrationEvent(ev)}
+        />
+      );
+    }
+
     switch (activeView) {
       case 'explore':
         return (
           <ExploreView
             articles={snap.articles}
-            papers={snap.researchPapers}
             currentUser={currentUser}
             pillar={pillar}
             onPillar={setPillar}
             onOpenArticlePopup={handleOpenArticlePopup}
-            onAddPaper={(paper: ResearchPaper) => {
-              commit((prev) => ({
-                ...prev,
-                researchPapers: [paper, ...prev.researchPapers],
-              }));
-              dbUpsertResearchPaper(paper);
-              toast.success('গবেষণাপত্র Supabase-এ সংরক্ষিত হয়েছে');
-            }}
             onNavigateProfile={navigateToProfile}
             onOpenPhoto={(src, title, authorName, authorId) =>
               openPhotoPopup([src], 0, title, undefined, authorName, authorId)
@@ -627,28 +632,8 @@ export function RootShell() {
         return (
           <EventsView
             events={snap.events}
-            onToggle={(id) => {
-              commit((prev) => {
-                const nextReg = toggleBookmarkId(prev.eventRegistrations, id);
-                return {
-                  ...prev,
-                  eventRegistrations: nextReg,
-                  events: prev.events.map((e) =>
-                    e.id === id ? { ...e, isRegistered: nextReg.includes(id) } : e,
-                  ),
-                };
-              });
-              toast.success('ইভেন্ট রেজিস্ট্রেশন আপডেট হয়েছে');
-            }}
-            onAddEvent={(ev) => {
-              commit((prev) => ({
-                ...prev,
-                events: [ev, ...prev.events],
-                eventRegistrations: [...prev.eventRegistrations, ev.id],
-              }));
-              dbUpsertEvent(ev);
-              toast.success('নতুন ইভেন্ট Supabase-এ যুক্ত হয়েছে');
-            }}
+            onNavigate={goNavigate}
+            onOpenRegister={(ev) => setRegistrationEvent(ev)}
           />
         );
       case 'store':
@@ -815,8 +800,11 @@ export function RootShell() {
     return undefined;
   }, [rxBreakdown, snap.articles, snap.posts]);
 
+  const isHomePage = activeView === 'home' && location.pathname === '/';
+
   return (
-    <div className={cn('min-h-screen bg-canvas text-pine-900', dark && 'dark')}>
+    <div className={cn('min-h-screen bg-canvas text-slate-900 flex flex-col justify-between', dark && 'dark')}>
+      <SiteLoader />
       <Header
         activeView={activeView}
         onNavigate={goNavigate}
@@ -826,8 +814,6 @@ export function RootShell() {
         savedCount={savedCount}
         cartCount={cartCount}
         reelsCount={snap.reels.length}
-        supabaseStatus={supaStatus}
-        onOpenSupabaseConsole={() => setSupaConsoleOpen(true)}
         onOpenCart={() => setCheckoutOpen(true)}
         onOpenSaved={() => setSavedOpen(true)}
         onOpenReels={() => {
@@ -851,60 +837,62 @@ export function RootShell() {
         onNavigateProfile={navigateToProfile}
       />
 
-      <div
-        className={cn(
-          'mx-auto grid max-w-[1440px] grid-cols-1 gap-6 pt-2 sm:px-4 sm:pt-5',
-          LAYOUT_GRID,
-        )}
-      >
-        <LeftSidebar
-          currentUser={currentUser}
-          articles={snap.articles}
-          reels={snap.reels}
-          papers={snap.researchPapers}
-          savedCount={savedCount}
-          onOpenSaved={() => setSavedOpen(true)}
-          onOpenReels={() => {
-            if (reelPlayerItems.length > 0) setPlayer({ items: reelPlayerItems, start: 0 });
-            else setReelUploadOpen(true);
-          }}
-          onOpenAI={() => setAiOpen(true)}
-          onOpenProfileSettings={() => setProfileSettingsOpen(true)}
-          onNavigate={goNavigate}
-          activePillar={pillar}
-          onPillar={setPillar}
-        />
+      {isHomePage ? (
+        <div className="mx-auto grid max-w-[1400px] grid-cols-1 lg:grid-cols-[210px_minmax(0,1fr)_260px] gap-5 pt-2 sm:px-4 sm:pt-4">
+          <LeftSidebar
+            currentUser={currentUser}
+            articles={snap.articles}
+            reels={snap.reels}
+            savedCount={savedCount}
+            onOpenSaved={() => setSavedOpen(true)}
+            onOpenReels={() => {
+              if (reelPlayerItems.length > 0) setPlayer({ items: reelPlayerItems, start: 0 });
+              else setReelUploadOpen(true);
+            }}
+            onOpenAI={() => setAiOpen(true)}
+            onOpenProfileSettings={() => setProfileSettingsOpen(true)}
+            onNavigate={goNavigate}
+            activePillar={pillar}
+            onPillar={setPillar}
+          />
 
-        <main className={cn(FEED_WIDTH, 'min-w-0 pb-10')}>{mainContent}</main>
+          <main className="min-w-0 pb-10">{mainContent}</main>
 
-        <RightSidebar
-          articles={snap.articles}
-          events={snap.events}
-          profiles={snap.profiles}
-          currentUserId={currentUser?.id || ''}
-          followingIds={snap.followingIds}
-          onToggleEvent={(id) => {
-            commit((prev) => {
-              const nextReg = toggleBookmarkId(prev.eventRegistrations, id);
-              return {
-                ...prev,
-                eventRegistrations: nextReg,
-                events: prev.events.map((e) =>
-                  e.id === id ? { ...e, isRegistered: nextReg.includes(id) } : e,
-                ),
-              };
-            });
-          }}
-          onToggleFollow={handleToggleFollow}
-          onOpenArticlePopup={handleOpenArticlePopup}
-          onNavigateProfile={navigateToProfile}
-          onNavigate={goNavigate}
-          onOpenPhoto={(src, title, authorName, authorId) =>
-            openPhotoPopup([src], 0, title, undefined, authorName, authorId)
-          }
-          onOpenAddEvent={() => goNavigate('/events')}
-        />
-      </div>
+          <RightSidebar
+            articles={snap.articles}
+            events={snap.events}
+            profiles={snap.profiles}
+            currentUserId={currentUser?.id || ''}
+            followingIds={snap.followingIds}
+            onToggleEvent={(id) => {
+              commit((prev) => {
+                const nextReg = toggleBookmarkId(prev.eventRegistrations, id);
+                return {
+                  ...prev,
+                  eventRegistrations: nextReg,
+                  events: prev.events.map((e) =>
+                    e.id === id ? { ...e, isRegistered: nextReg.includes(id) } : e,
+                  ),
+                };
+              });
+            }}
+            onOpenRegister={(ev) => setRegistrationEvent(ev)}
+            onToggleFollow={handleToggleFollow}
+            onOpenArticlePopup={handleOpenArticlePopup}
+            onNavigateProfile={navigateToProfile}
+            onNavigate={goNavigate}
+            onOpenPhoto={(src, title, authorName, authorId) =>
+              openPhotoPopup([src], 0, title, undefined, authorName, authorId)
+            }
+          />
+        </div>
+      ) : (
+        <div className="mx-auto max-w-4xl px-4 pt-4 pb-12 min-w-0 flex-1">
+          <main className="min-w-0">{mainContent}</main>
+        </div>
+      )}
+
+      <Footer />
 
       {/* Modals & Popups */}
       <CreatePostModal
@@ -1011,16 +999,19 @@ export function RootShell() {
         onCompleteOrder={handleCompleteOrder}
       />
 
-      <SupabaseConsoleModal
-        open={supaConsoleOpen}
-        onClose={() => setSupaConsoleOpen(false)}
-        status={supaStatus}
-        errorMessage={supaError}
-        snapshot={snap}
-        onSyncNow={async () => {
-          await syncLocalToSupabase(snap);
-          await refreshFromSupabase();
-          toast.success('Supabase সিঙ্ক সম্পন্ন হয়েছে');
+      <EventRegistrationModal
+        open={!!registrationEvent}
+        event={registrationEvent}
+        onClose={() => setRegistrationEvent(null)}
+        onRegistered={(reg) => {
+          commit((prev) => ({
+            ...prev,
+            eventRegistrations: [...prev.eventRegistrations, reg.eventId],
+            events: prev.events.map((e) =>
+              e.id === reg.eventId ? { ...e, isRegistered: true } : e,
+            ),
+          }));
+          toast.success('রেজিস্ট্রেশন সম্পন্ন হয়েছে! আপনার আসন নিশ্চিত।');
         }}
       />
 

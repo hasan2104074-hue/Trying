@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Article } from '../types';
 import { cn } from './Primitives';
 
@@ -29,25 +30,29 @@ export function ImageGraphic({
 }) {
   const m = PLATE_PALETTE[type] ?? PLATE_PALETTE.floating;
 
+  const [imgFailed, setImgFailed] = useState(false);
+  const showCover = Boolean(coverImageUrl) && !imgFailed;
+
   return (
     <div
       onClick={(e) => {
-        if (coverImageUrl && onClickPhoto) {
+        if (showCover && onClickPhoto && coverImageUrl) {
           e.stopPropagation();
           onClickPhoto(coverImageUrl);
         }
       }}
-      style={!coverImageUrl ? { background: m.bg } : undefined}
+      style={!showCover ? { background: m.bg } : undefined}
       className={cn(
         'relative overflow-hidden bg-pine-900',
-        coverImageUrl && onClickPhoto && 'cursor-zoom-in',
+        showCover && onClickPhoto && 'cursor-zoom-in',
         className,
       )}
     >
-      {coverImageUrl ? (
+      {showCover ? (
         <img
           src={coverImageUrl}
           alt={title || m.label}
+          onError={() => setImgFailed(true)}
           className="absolute inset-0 size-full object-cover transition duration-500 hover:scale-[1.02]"
         />
       ) : (

@@ -31,9 +31,9 @@ export interface DatabaseSnapshot {
   notifications: NotificationItem[];
 }
 
-const STORAGE_KEY = 'plainsyt_supabase_mirror_fycghkjzodjrqornkton_v1';
+const STORAGE_KEY = 'plainsyt_clean_mirror_v3';
 
-const EMPTY_SNAPSHOT: DatabaseSnapshot = {
+export const DEFAULT_SEED_SNAPSHOT: DatabaseSnapshot = {
   profiles: [],
   currentUserId: '',
   articles: [],
@@ -42,7 +42,30 @@ const EMPTY_SNAPSHOT: DatabaseSnapshot = {
   reactions: [],
   reels: [],
   stories: [],
-  events: [],
+  events: [
+    {
+      id: 'ev-summit-2026',
+      title: 'বাংলাদেশ ডিজিটাল কৃষি ও প্রকাশনা সামিট ২০২৬',
+      dateMonth: 'MAR',
+      dateDay: '১৫',
+      location: 'বঙ্গবন্ধু আন্তর্জাতিক সম্মেলন কেন্দ্র (BICC), ঢাকা',
+      attendeesCount: '৩৫০ জন নিবন্ধিত',
+      organizerName: 'Plainsyt Foundation',
+      description: 'বাংলাদেশের নবীন ও অভিজ্ঞ গবেষক, লেখক এবং প্রযুক্তিবিদদের বৃহত্তম জাতীয় সম্মিলন।',
+      isRegistered: false,
+    },
+    {
+      id: 'ev-workshop-iot',
+      title: 'উন্মুক্ত ব্লগিং ও আধুনিক ডিজিটাল সাংবাদিকতা কর্মশালা',
+      dateMonth: 'APR',
+      dateDay: '০২',
+      location: 'বিশ্বসাহিত্য কেন্দ্র মিলনায়তন, বাংলামোটর, ঢাকা',
+      attendeesCount: '১২০ জন নিবন্ধিত',
+      organizerName: 'Plainsyt Media',
+      description: 'অনুসন্ধানী প্রতিবেদন রচনা ও ডিজিটাল মাধ্যম ব্যবহারের কার্যকর কৌশল নিয়ে দিনব্যাপী প্রশিক্ষণ।',
+      isRegistered: false,
+    },
+  ],
   eventRegistrations: [],
   researchPapers: [],
   storeProducts: [],
@@ -64,13 +87,13 @@ export function readSnapshot(): DatabaseSnapshot {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<DatabaseSnapshot>;
-      memoryCache = { ...EMPTY_SNAPSHOT, ...parsed };
+      memoryCache = { ...DEFAULT_SEED_SNAPSHOT, ...parsed };
       return memoryCache;
     }
   } catch {
     // ignore storage errors
   }
-  memoryCache = { ...EMPTY_SNAPSHOT };
+  memoryCache = { ...DEFAULT_SEED_SNAPSHOT };
   return memoryCache;
 }
 
@@ -88,7 +111,7 @@ export function writeSnapshot(next: DatabaseSnapshot): DatabaseSnapshot {
 const toProfileRow = (p: UserProfile) => ({
   id: p.id,
   name: p.name,
-  name_bn: p.nameBn,
+  name_bn: p.nameBn || p.name,
   handle: p.handle,
   role: p.role,
   organization: p.organization,
@@ -109,7 +132,7 @@ const toProfileRow = (p: UserProfile) => ({
 const fromProfileRow = (r: Record<string, unknown>): UserProfile => ({
   id: String(r.id),
   name: String(r.name ?? ''),
-  nameBn: String(r.name_bn ?? ''),
+  nameBn: String(r.name_bn ?? r.name ?? ''),
   handle: String(r.handle ?? ''),
   role: String(r.role ?? ''),
   organization: String(r.organization ?? ''),
@@ -244,7 +267,7 @@ const fromPostRow = (r: Record<string, unknown>, comments: Comment[], reactions:
   };
 };
 
-// Synchronize entire local cache to Supabase tables when schema is ready
+// Synchronize snapshot to Supabase tables when schema is ready
 export async function syncLocalToSupabase(snap: DatabaseSnapshot): Promise<{ ok: boolean; error?: string }> {
   try {
     if (snap.profiles.length > 0) {
@@ -422,8 +445,8 @@ export async function syncLocalToSupabase(snap: DatabaseSnapshot): Promise<{ ok:
   }
 }
 
-// Fetch all live data from Supabase with keyset/range pagination for high speed
-export async function fetchFromSupabase(limit = 50): Promise<{
+// Fetch all live data from Supabase with resilient fallbacks
+export async function fetchFromSupabase(limit = 60): Promise<{
   status: SupabaseConnectionStatus;
   snapshot?: DatabaseSnapshot;
   errorMessage?: string;
@@ -433,9 +456,9 @@ export async function fetchFromSupabase(limit = 50): Promise<{
     const probe = await supabase.from('profiles').select('*').order('created_at', { ascending: false }).range(0, limit - 1);
     if (probe.error) {
       if (probe.error.code === 'PGRST205' || probe.error.message?.includes('schema cache')) {
-        return { status: 'schema_missing', errorMessage: probe.error.message };
+        return { status: 'schema_missing', snapshot: local, errorMessage: probe.error.message };
       }
-      return { status: 'offline', errorMessage: probe.error.message };
+      return { status: 'offline', snapshot: local, errorMessage: probe.error.message };
     }
 
     // Parallel indexed queries across all tables
@@ -615,7 +638,7 @@ export async function fetchFromSupabase(limit = 50): Promise<{
       targetRoute: String(r.target_route ?? '/'),
     }));
 
-    // If remote tables are empty but user created local items before running migration, push them up
+    // If remote tables are empty but local has seed items, automatically populate remote
     if (
       profiles.length === 0 &&
       articles.length === 0 &&
@@ -627,58 +650,75 @@ export async function fetchFromSupabase(limit = 50): Promise<{
 
     const merged: DatabaseSnapshot = {
       ...local,
-      profiles,
-      currentUserId,
-      articles,
-      posts,
-      comments,
-      reactions,
-      reels,
-      stories,
-      events,
-      researchPapers,
-      storeProducts,
-      orders,
-      ideas,
-      notifications,
+      profiles: profiles.length > 0 ? profiles : local.profiles,
+      currentUserId: currentUserId || local.currentUserId,
+      articles: articles.length > 0 ? articles : local.articles,
+      posts: posts.length > 0 ? posts : local.posts,
+      comments: comments.length > 0 ? comments : local.comments,
+      reactions: reactions.length > 0 ? reactions : local.reactions,
+      reels: reels.length > 0 ? reels : local.reels,
+      stories: stories.length > 0 ? stories : local.stories,
+      events: events.length > 0 ? events : local.events,
+      researchPapers: researchPapers.length > 0 ? researchPapers : local.researchPapers,
+      storeProducts: storeProducts.length > 0 ? storeProducts : local.storeProducts,
+      orders: orders.length > 0 ? orders : local.orders,
+      ideas: ideas.length > 0 ? ideas : local.ideas,
+      notifications: notifications.length > 0 ? notifications : local.notifications,
     };
     writeSnapshot(merged);
     return { status: 'connected', snapshot: merged };
   } catch (err) {
     return {
       status: 'offline',
+      snapshot: local,
       errorMessage: err instanceof Error ? err.message : 'Network error',
     };
   }
 }
 
-// Individual high-speed Supabase write helpers (optimistic + background persistence)
+// Background write helpers with error catches to prevent unhandled rejections
 export async function dbUpsertProfile(profile: UserProfile) {
-  await supabase.from('profiles').upsert(toProfileRow(profile));
+  try {
+    await supabase.from('profiles').upsert(toProfileRow(profile));
+  } catch {
+    // local-first fallback
+  }
 }
 
 export async function dbUpsertArticle(article: Article) {
-  await supabase.from('articles').upsert(toArticleRow(article));
+  try {
+    await supabase.from('articles').upsert(toArticleRow(article));
+  } catch {
+    // local-first fallback
+  }
 }
 
 export async function dbUpsertPost(post: CommunityPost) {
-  await supabase.from('posts').upsert(toPostRow(post));
+  try {
+    await supabase.from('posts').upsert(toPostRow(post));
+  } catch {
+    // local-first fallback
+  }
 }
 
 export async function dbInsertComment(comment: Comment) {
-  await supabase.from('comments').upsert({
-    id: comment.id,
-    target_type: comment.targetType ?? 'article',
-    target_id: comment.targetId ?? '',
-    author_id: comment.authorId,
-    author: comment.author,
-    avatar: comment.avatar,
-    role: comment.role,
-    text: comment.text,
-    timestamp_label: comment.timestamp,
-    likes: comment.likes,
-    reaction_counts: comment.reactionCounts ?? {},
-  });
+  try {
+    await supabase.from('comments').upsert({
+      id: comment.id,
+      target_type: comment.targetType ?? 'article',
+      target_id: comment.targetId ?? '',
+      author_id: comment.authorId,
+      author: comment.author,
+      avatar: comment.avatar,
+      role: comment.role,
+      text: comment.text,
+      timestamp_label: comment.timestamp,
+      likes: comment.likes,
+      reaction_counts: comment.reactionCounts ?? {},
+    });
+  } catch {
+    // local-first fallback
+  }
 }
 
 export async function dbSetReaction(
@@ -689,179 +729,215 @@ export async function dbSetReaction(
   updatedCounts: Partial<Record<LinkedInReactionType, number>>,
   updatedTotal: number,
 ) {
-  if (!reactionType) {
-    await supabase
-      .from('reactions')
-      .delete()
-      .match({ target_type: targetType, target_id: targetId, user_id: user.id });
-  } else {
-    await supabase.from('reactions').upsert(
-      {
-        id: `rx-${targetType}-${targetId}-${user.id}`,
-        target_type: targetType,
-        target_id: targetId,
-        user_id: user.id,
-        user_name: user.name,
-        user_avatar: user.avatar,
-        user_role: `${user.role}${user.organization ? ` · ${user.organization}` : ''}`,
-        type: reactionType,
-        created_at: new Date().toISOString(),
-      },
-      { onConflict: 'target_type,target_id,user_id' },
-    );
-  }
-  if (targetType === 'article') {
-    await supabase
-      .from('articles')
-      .update({ reaction_counts: updatedCounts })
-      .eq('id', targetId);
-  } else if (targetType === 'post') {
-    await supabase
-      .from('posts')
-      .update({ reaction_counts: updatedCounts })
-      .eq('id', targetId);
-  } else if (targetType === 'reel') {
-    await supabase
-      .from('reels')
-      .update({ reaction_counts: updatedCounts, likes: updatedTotal })
-      .eq('id', targetId);
-  } else if (targetType === 'comment') {
-    await supabase
-      .from('comments')
-      .update({ reaction_counts: updatedCounts, likes: updatedTotal })
-      .eq('id', targetId);
+  try {
+    if (!reactionType) {
+      await supabase
+        .from('reactions')
+        .delete()
+        .match({ target_type: targetType, target_id: targetId, user_id: user.id });
+    } else {
+      await supabase.from('reactions').upsert(
+        {
+          id: `rx-${targetType}-${targetId}-${user.id}`,
+          target_type: targetType,
+          target_id: targetId,
+          user_id: user.id,
+          user_name: user.name,
+          user_avatar: user.avatar,
+          user_role: `${user.role}${user.organization ? ` · ${user.organization}` : ''}`,
+          type: reactionType,
+          created_at: new Date().toISOString(),
+        },
+        { onConflict: 'target_type,target_id,user_id' },
+      );
+    }
+    if (targetType === 'article') {
+      await supabase
+        .from('articles')
+        .update({ reaction_counts: updatedCounts })
+        .eq('id', targetId);
+    } else if (targetType === 'post') {
+      await supabase
+        .from('posts')
+        .update({ reaction_counts: updatedCounts })
+        .eq('id', targetId);
+    } else if (targetType === 'reel') {
+      await supabase
+        .from('reels')
+        .update({ reaction_counts: updatedCounts, likes: updatedTotal })
+        .eq('id', targetId);
+    } else if (targetType === 'comment') {
+      await supabase
+        .from('comments')
+        .update({ reaction_counts: updatedCounts, likes: updatedTotal })
+        .eq('id', targetId);
+    }
+  } catch {
+    // local-first fallback
   }
 }
 
 export async function dbUpsertReel(reel: StoryReel) {
-  await supabase.from('reels').upsert({
-    id: reel.id,
-    title: reel.title,
-    creator_id: reel.creatorId,
-    creator: reel.creator,
-    creator_avatar: reel.creatorAvatar,
-    location: reel.location,
-    duration: reel.duration,
-    views: reel.views,
-    gradient_theme: reel.gradientTheme,
-    video_type: reel.videoType,
-    media_url: reel.mediaUrl,
-    video_url: reel.videoUrl ?? '',
-    likes: reel.likes,
-    reaction_counts: reel.reactionCounts ?? {},
-  });
+  try {
+    await supabase.from('reels').upsert({
+      id: reel.id,
+      title: reel.title,
+      creator_id: reel.creatorId,
+      creator: reel.creator,
+      creator_avatar: reel.creatorAvatar,
+      location: reel.location,
+      duration: reel.duration,
+      views: reel.views,
+      gradient_theme: reel.gradientTheme,
+      video_type: reel.videoType,
+      media_url: reel.mediaUrl,
+      video_url: reel.videoUrl ?? '',
+      likes: reel.likes,
+      reaction_counts: reel.reactionCounts ?? {},
+    });
+  } catch {
+    // local-first fallback
+  }
 }
 
 export async function dbUpsertStory(story: TopicStory) {
-  await supabase.from('stories').upsert({
-    id: story.id,
-    title: story.title,
-    category: story.category,
-    image_url: story.imageUrl,
-    icon_name: story.iconName,
-    reads_count: story.readsCount ?? '0',
-    author_id: story.authorId ?? '',
-    author_name: story.authorName ?? '',
-    author_avatar: story.authorAvatar ?? '',
-    article_id: story.articleId ?? null,
-  });
+  try {
+    await supabase.from('stories').upsert({
+      id: story.id,
+      title: story.title,
+      category: story.category,
+      image_url: story.imageUrl,
+      icon_name: story.iconName,
+      reads_count: story.readsCount ?? '0',
+      author_id: story.authorId ?? '',
+      author_name: story.authorName ?? '',
+      author_avatar: story.authorAvatar ?? '',
+      article_id: story.articleId ?? null,
+    });
+  } catch {
+    // local-first fallback
+  }
 }
 
 export async function dbUpsertProduct(product: StoreProduct) {
-  await supabase.from('store_products').upsert({
-    id: product.id,
-    name: product.name,
-    description: product.description,
-    price: product.price,
-    unit: product.unit,
-    tag: product.tag,
-    image: product.image,
-    seller_id: product.sellerId,
-    seller: product.seller,
-    stock: product.stock,
-    created_at: product.createdAt,
-  });
+  try {
+    await supabase.from('store_products').upsert({
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      unit: product.unit,
+      tag: product.tag,
+      image: product.image,
+      seller_id: product.sellerId,
+      seller: product.seller,
+      stock: product.stock,
+      created_at: product.createdAt,
+    });
+  } catch {
+    // local-first fallback
+  }
 }
 
 export async function dbInsertOrder(order: BkashOrder) {
-  await supabase.from('orders').upsert({
-    id: order.id,
-    order_number: order.orderNumber,
-    buyer_id: order.buyerId,
-    buyer_name: order.buyerName,
-    buyer_phone: order.buyerPhone,
-    district: order.district,
-    delivery_address: order.deliveryAddress,
-    delivery_zone: order.deliveryZone,
-    notes: order.notes ?? '',
-    items: order.items,
-    subtotal_bdt: order.subtotalBdt,
-    delivery_fee_bdt: order.deliveryFeeBdt,
-    total_bdt: order.totalBdt,
-    receiver_bkash: BKASH_RECEIVER_NUMBER,
-    sender_bkash: order.senderBkash,
-    trx_id: order.trxId,
-    payment_method: order.paymentMethod,
-    payment_screenshot: order.paymentScreenshot ?? '',
-    status: order.status,
-    created_at: order.createdAt,
-  });
+  try {
+    await supabase.from('orders').upsert({
+      id: order.id,
+      order_number: order.orderNumber,
+      buyer_id: order.buyerId,
+      buyer_name: order.buyerName,
+      buyer_phone: order.buyerPhone,
+      district: order.district,
+      delivery_address: order.deliveryAddress,
+      delivery_zone: order.deliveryZone,
+      notes: order.notes ?? '',
+      items: order.items,
+      subtotal_bdt: order.subtotalBdt,
+      delivery_fee_bdt: order.deliveryFeeBdt,
+      total_bdt: order.totalBdt,
+      receiver_bkash: BKASH_RECEIVER_NUMBER,
+      sender_bkash: order.senderBkash,
+      trx_id: order.trxId,
+      payment_method: order.paymentMethod,
+      payment_screenshot: order.paymentScreenshot ?? '',
+      status: order.status,
+      created_at: order.createdAt,
+    });
+  } catch {
+    // local-first fallback
+  }
 }
 
 export async function dbUpsertEvent(event: UpcomingEvent) {
-  await supabase.from('events').upsert({
-    id: event.id,
-    title: event.title,
-    date_month: event.dateMonth,
-    date_day: event.dateDay,
-    location: event.location,
-    attendees_count: event.attendeesCount,
-    organizer_id: event.organizerId ?? '',
-    organizer_name: event.organizerName ?? '',
-    description: event.description ?? '',
-    external_link: event.externalLink ?? '',
-  });
+  try {
+    await supabase.from('events').upsert({
+      id: event.id,
+      title: event.title,
+      date_month: event.dateMonth,
+      date_day: event.dateDay,
+      location: event.location,
+      attendees_count: event.attendeesCount,
+      organizer_id: event.organizerId ?? '',
+      organizer_name: event.organizerName ?? '',
+      description: event.description ?? '',
+      external_link: event.externalLink ?? '',
+    });
+  } catch {
+    // local-first fallback
+  }
 }
 
 export async function dbUpsertResearchPaper(paper: ResearchPaper) {
-  await supabase.from('research_papers').upsert({
-    id: paper.id,
-    institution: paper.institution,
-    institution_code: paper.institutionCode,
-    title: paper.title,
-    summary: paper.summary,
-    practical_impact: paper.practicalImpact,
-    published_date: paper.publishedDate,
-    researchers: paper.researchers,
-    author_id: paper.authorId ?? '',
-    doi_link: paper.doiLink ?? '',
-  });
+  try {
+    await supabase.from('research_papers').upsert({
+      id: paper.id,
+      institution: paper.institution,
+      institution_code: paper.institutionCode,
+      title: paper.title,
+      summary: paper.summary,
+      practical_impact: paper.practicalImpact,
+      published_date: paper.publishedDate,
+      researchers: paper.researchers,
+      author_id: paper.authorId ?? '',
+      doi_link: paper.doiLink ?? '',
+    });
+  } catch {
+    // local-first fallback
+  }
 }
 
 export async function dbUpsertIdea(idea: CommunityIdea) {
-  await supabase.from('ideas').upsert({
-    id: idea.id,
-    title: idea.title,
-    body: idea.body,
-    author_id: idea.authorId,
-    author: idea.author,
-    author_avatar: idea.authorAvatar ?? '',
-    votes: idea.votes,
-    tag: idea.tag,
-    created_at: idea.createdAt,
-  });
+  try {
+    await supabase.from('ideas').upsert({
+      id: idea.id,
+      title: idea.title,
+      body: idea.body,
+      author_id: idea.authorId,
+      author: idea.author,
+      author_avatar: idea.authorAvatar ?? '',
+      votes: idea.votes,
+      tag: idea.tag,
+      created_at: idea.createdAt,
+    });
+  } catch {
+    // local-first fallback
+  }
 }
 
 export async function dbInsertNotification(notif: NotificationItem) {
-  await supabase.from('notifications').upsert({
-    id: notif.id,
-    user_id: notif.userId ?? '',
-    title: notif.title,
-    source: notif.source,
-    time_label: notif.time,
-    unread: notif.unread,
-    target_route: notif.targetRoute ?? '/',
-  });
+  try {
+    await supabase.from('notifications').upsert({
+      id: notif.id,
+      user_id: notif.userId ?? '',
+      title: notif.title,
+      source: notif.source,
+      time_label: notif.time,
+      unread: notif.unread,
+      target_route: notif.targetRoute ?? '/',
+    });
+  } catch {
+    // local-first fallback
+  }
 }
 
 // Helper to compute updated reaction state in snapshot

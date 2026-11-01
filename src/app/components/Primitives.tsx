@@ -10,19 +10,38 @@ const TONES = ['bg-pine-100 text-pine-800', 'bg-[#f6e7c8] text-[#6b4a12]', 'bg-[
 
 export function Avatar({
   src, name, size = 'size-10', online, ring, className,
-}: { src: string; name?: string; size?: string; online?: boolean; ring?: boolean; className?: string }) {
-  const isUrl = src.startsWith('http') || src.startsWith('blob:');
-  const tone = TONES[(src.charCodeAt(0) + (src.charCodeAt(1) || 0)) % TONES.length];
+}: { src?: string; name?: string; size?: string; online?: boolean; ring?: boolean; className?: string }) {
+  const s = src || '';
+  const isUrl = s.startsWith('http') || s.startsWith('blob:') || s.startsWith('/') || s.startsWith('data:');
+  const code0 = s.charCodeAt(0) || 65;
+  const code1 = s.charCodeAt(1) || 66;
+  const tone = TONES[(code0 + code1) % TONES.length];
+  const initials = (name || s || 'PS').trim().slice(0, 2).toUpperCase();
+
   return (
     <span className={cn('relative inline-flex shrink-0', size, className)}>
       <span
         className={cn(
-          'flex size-full items-center justify-center overflow-hidden rounded-full font-semibold text-[0.7em] leading-none',
+          'flex size-full items-center justify-center overflow-hidden rounded-full font-semibold text-[0.7em] leading-none select-none',
           ring ? 'ring-2 ring-pine-500 ring-offset-2 ring-offset-canvas-card' : 'border border-pine-900/15',
           !isUrl && tone,
         )}
       >
-        {isUrl ? <img src={src} alt={name ?? ''} className="size-full object-cover text-transparent" /> : <span className="text-[13px]">{src}</span>}
+        {isUrl ? (
+          <img
+            src={s}
+            alt={name ?? ''}
+            onError={(e) => {
+              (e.currentTarget as HTMLElement).style.display = 'none';
+              if (e.currentTarget.parentElement) {
+                e.currentTarget.parentElement.classList.add(tone);
+              }
+            }}
+            className="size-full object-cover text-transparent"
+          />
+        ) : (
+          <span className="text-[12px] font-bold">{initials}</span>
+        )}
       </span>
       {online && (
         <span className="absolute bottom-0 right-0 size-[28%] min-h-2.5 min-w-2.5 rounded-full border-2 border-canvas-card bg-[#31a24c]" />
