@@ -23,6 +23,13 @@ export function Avatar({
     (s.toLowerCase().includes('plainsyt') && isUrl)
   );
 
+  const initials = (name || s || 'PS')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() || '')
+    .join('') || (s.slice(0, 2).toUpperCase() || 'PS');
+
   return (
     <span className={cn('relative inline-flex shrink-0', size, className)}>
       <span

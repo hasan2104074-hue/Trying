@@ -166,6 +166,9 @@ assert(headerSource.includes('left-1/2 -translate-x-1/2'), 'Header center naviga
 const rootShellSource = fs.readFileSync(path.join(rootDir, 'src/app/components/RootShell.tsx'), 'utf-8');
 assert(!rootShellSource.includes('if (snap.profiles && snap.profiles.length > 0) return snap.profiles[0]'), 'RootShell ensureActor does not escalate guests to admin profile');
 
+const primitivesSource = fs.readFileSync(path.join(rootDir, 'src/app/components/Primitives.tsx'), 'utf-8');
+assert(primitivesSource.includes('const initials ='), 'Primitives.tsx defines initials before rendering');
+
 // ----------------------------------------------------
 // SUITE 6: VITE PRODUCTION BUILD VERIFICATION
 // ----------------------------------------------------
