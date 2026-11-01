@@ -53,9 +53,10 @@ export function PhotoLightboxModal({
 
   return (
     <div
-      className="fixed inset-0 z-[110] flex flex-col bg-black/92 text-white backdrop-blur-md"
+      className="fixed inset-0 z-[110] flex flex-col bg-black/95 text-white backdrop-blur-md lightbox-ui"
       role="dialog"
       aria-modal="true"
+      data-white-icon="true"
       aria-label={payload.title || 'Photo viewer'}
     >
       {/* Top Toolbar */}
@@ -75,7 +76,7 @@ export function PhotoLightboxModal({
               }}
               className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white/90 hover:text-white hover:underline"
             >
-              <User className="size-3.5 text-[#38b17e]" />
+              <User className="size-3.5 text-white/80" />
               {payload.authorName}
             </button>
           )}

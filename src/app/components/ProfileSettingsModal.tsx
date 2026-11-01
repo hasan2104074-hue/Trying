@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Camera, Check, Palette, Plus, Sparkles, UserCheck, Users } from 'lucide-react';
+import { Camera, Check, Crop, Palette, Plus, Sparkles, UserCheck, Users } from 'lucide-react';
 import type { UserProfile } from '../types';
 import { COVER_GRADIENT_PRESETS } from '../utils/pureLogic';
 import { Avatar, CloseButton, Modal, SectionLabel, cn } from './Primitives';
+import { AvatarCropModal } from './AvatarCropModal';
 
 function compressImageFile(file: File, maxDim = 360): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -94,11 +95,19 @@ export function ProfileSettingsModal({
     }
   }, [open, currentUser, mode]);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [cropOpen, setCropOpen] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const dataUrl = await compressImageFile(file, 360);
-    setAvatar(dataUrl);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropImageSrc(String(reader.result));
+      setCropOpen(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   const applyCustomGradient = (c1: string, c2: string, deg: number) => {
@@ -163,12 +172,12 @@ export function ProfileSettingsModal({
   };
 
   const inputCls =
-    'w-full rounded-lg border border-pine-900/25 bg-canvas-card px-3 py-2 text-[14px] text-pine-900 outline-none placeholder:text-pine-900/40 focus:border-pine-900';
+    'w-full rounded-xl border border-slate-200/90 dark:border-white/10 bg-canvas-card px-3.5 py-2.5 text-[14px] text-slate-900 dark:text-white outline-none placeholder:text-slate-400 focus:border-[#00ED64] focus:ring-2 focus:ring-[#00ED64]/20 transition';
 
   return (
     <Modal open={open} onClose={onClose} className="max-w-[680px]" labelledBy="profile-settings-title">
-      <div className="overflow-hidden rounded-t-2xl border border-pine-900 bg-canvas shadow-tactile-lg sm:rounded-2xl">
-        <div className="flex items-center justify-between border-b border-pine-900 bg-canvas-card px-5 py-3.5">
+      <div className="overflow-hidden rounded-2xl border border-slate-200/80 dark:border-white/10 bg-canvas shadow-2xl sm:rounded-3xl">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 bg-canvas-card px-5 py-4">
           <div>
             <h2 id="profile-settings-title" className="font-display text-[21px] font-semibold text-pine-900">
               Profile &amp; Appearance Settings
@@ -259,12 +268,12 @@ export function ProfileSettingsModal({
         ) : (
           <form onSubmit={handleSubmit} className="max-h-[76vh] space-y-5 overflow-y-auto p-5">
             {/* Live Cover Gradient + Avatar Preview */}
-            <div className="overflow-hidden rounded-xl border border-pine-900 bg-canvas-card shadow-tactile-sm">
+            <div className="overflow-hidden rounded-2xl border border-slate-200/80 dark:border-white/10 bg-canvas-card shadow-sm">
               <div
                 style={{ background: coverGradient }}
                 className="relative h-28 w-full transition-all duration-300"
               >
-                <span className="absolute right-3 top-3 rounded-md bg-black/45 px-2 py-0.5 font-mono text-[10px] text-white backdrop-blur-sm">
+                <span className="absolute right-3 top-3 rounded-full bg-black/50 px-2.5 py-0.5 font-mono text-[10px] text-white backdrop-blur-sm">
                   Live Cover Preview
                 </span>
               </div>
@@ -281,7 +290,7 @@ export function ProfileSettingsModal({
                       type="button"
                       onClick={() => fileRef.current?.click()}
                       aria-label="Upload profile picture"
-                      className="absolute bottom-0 right-0 flex size-8 items-center justify-center rounded-full border border-pine-900 bg-pine-900 text-canvas shadow hover:bg-pine-700"
+                      className="absolute bottom-0 right-0 flex size-8 items-center justify-center rounded-full border-2 border-white dark:border-[#0b1e15] bg-[#00ED64] text-[#061621] shadow hover:bg-[#00d859] transition active:scale-95"
                     >
                       <Camera className="size-4" />
                     </button>
@@ -302,13 +311,28 @@ export function ProfileSettingsModal({
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-pine-900 bg-canvas-subtle px-3 text-[12px] font-semibold text-pine-900 hover:bg-pine-100"
-                >
-                  <Camera className="size-3.5" /> Upload PFP Photo
-                </button>
+
+                <div className="flex items-center gap-2">
+                  {avatar && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCropImageSrc(avatar);
+                        setCropOpen(true);
+                      }}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-full border border-slate-200/90 dark:border-white/10 bg-white dark:bg-white/5 px-3 text-[12px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 transition shadow-xs"
+                    >
+                      <Crop className="size-3.5 text-emerald-600 dark:text-[#00ED64]" /> ক্রপ ও জুম
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-slate-200/90 dark:border-white/10 bg-white dark:bg-white/5 px-3.5 text-[12px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/10 transition shadow-xs"
+                  >
+                    <Camera className="size-3.5 text-emerald-600 dark:text-[#00ED64]" /> ছবি আপলোড
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -397,7 +421,7 @@ export function ProfileSettingsModal({
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Dr. Farhana Yasmin"
+                  placeholder="e.g. Zubair Hasan"
                   className={inputCls}
                 />
               </div>
@@ -406,7 +430,7 @@ export function ProfileSettingsModal({
                 <input
                   value={nameBn}
                   onChange={(e) => setNameBn(e.target.value)}
-                  placeholder="যেমন: ড. ফারহানা ইয়াসমিন"
+                  placeholder="যেমন: জুবায়ের হাসান"
                   className={cn(inputCls, 'font-bangla')}
                 />
               </div>
@@ -433,17 +457,8 @@ export function ProfileSettingsModal({
                 <input
                   value={handle}
                   onChange={(e) => setHandle(e.target.value)}
-                  placeholder="farhana.brri"
+                  placeholder="zubair.hasan"
                   className={cn(inputCls, 'font-mono')}
-                />
-              </div>
-              <div>
-                <SectionLabel className="mb-1">Location</SectionLabel>
-                <input
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="গাজীপুর, বাংলাদেশ"
-                  className={cn(inputCls, 'font-bangla')}
                 />
               </div>
               <div>
@@ -477,23 +492,35 @@ export function ProfileSettingsModal({
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 border-t border-canvas-border pt-3">
+            <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 dark:border-white/10 pt-4">
               <button
                 type="button"
                 onClick={onClose}
-                className="h-10 rounded-lg border border-canvas-border px-4 text-[13.5px] font-semibold text-pine-900/70 hover:bg-canvas-subtle"
+                className="h-10 rounded-full border border-slate-200 dark:border-white/10 px-5 text-[13.5px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={!name.trim()}
-                className="h-10 rounded-lg border border-pine-900 bg-pine-900 px-5 text-[14px] font-semibold text-canvas shadow-tactile-sm shadow-tactile-hover disabled:opacity-40"
+                className="h-10 rounded-full bg-[#00ED64] px-6 text-[14px] font-bold text-[#061621] shadow-sm hover:bg-[#00d859] active:scale-95 transition disabled:opacity-40"
               >
-                {mode === 'create' ? 'Create & Save to Supabase' : 'Save Profile to Supabase'}
+                {mode === 'create' ? 'Create & Save' : 'Save Profile'}
               </button>
             </div>
           </form>
+        )}
+
+        {cropImageSrc && (
+          <AvatarCropModal
+            open={cropOpen}
+            imageSrc={cropImageSrc}
+            onClose={() => setCropOpen(false)}
+            onApply={(croppedUrl) => {
+              setAvatar(croppedUrl);
+              setCropOpen(false);
+            }}
+          />
         )}
       </div>
     </Modal>

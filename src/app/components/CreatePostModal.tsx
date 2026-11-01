@@ -103,37 +103,36 @@ export function CreatePostModal({
   };
 
   const field =
-    'w-full rounded-lg border border-pine-900/25 bg-canvas-card px-3 py-2 font-bangla text-pine-900 outline-none placeholder:text-pine-900/35 focus:border-pine-900';
+    'w-full rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 px-3.5 py-2.5 font-bangla text-slate-900 dark:text-white outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white dark:focus:bg-canvas-card transition';
 
   return (
     <Modal open={open} onClose={onClose} className="max-w-[720px]" labelledBy="write-title">
-      <div className="rounded-t-2xl border border-pine-900 bg-canvas shadow-tactile-lg sm:rounded-2xl">
-        <div className="flex items-center justify-between border-b border-pine-900 px-5 py-3.5">
+      <div className="rounded-t-3xl border border-slate-200/80 dark:border-white/10 bg-canvas-card shadow-2xl sm:rounded-3xl overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 px-6 py-4">
           <div>
-            <h2 id="write-title" className="flex items-center gap-2 font-display text-[22px] font-semibold text-pine-900">
-              <PenLine className="size-5" />
+            <h2 id="write-title" className="flex items-center gap-2 font-display text-[22px] font-semibold text-slate-900 dark:text-white">
+              <PenLine className="size-5 text-emerald-600" />
               নতুন প্রতিবেদন লিখুন (Write Article)
             </h2>
-            <p className="font-mono text-[10.5px] text-pine-600">Stored directly in Supabase · public.articles</p>
+            <p className="font-mono text-[10.5px] text-slate-500 dark:text-slate-400">Stored directly in Supabase · public.articles</p>
           </div>
           <CloseButton onClick={onClose} />
         </div>
 
-        <div className="max-h-[75vh] space-y-4 overflow-y-auto p-5">
+        <div className="max-h-[75vh] space-y-4 overflow-y-auto p-6">
           <div>
-            <SectionLabel className="mb-1.5">বিভাগ · Section</SectionLabel>
-            <div className="flex flex-wrap gap-1.5">
+            <SectionLabel className="mb-2">বিভাগ · Section</SectionLabel>
+            <div className="flex flex-wrap gap-2">
               {CATS.map((c, i) => (
                 <button
                   key={c.bn}
                   type="button"
                   onClick={() => setCat(i)}
-                  aria-pressed={cat === i}
                   className={cn(
-                    'rounded-full border px-3 py-1 font-bangla text-[12.5px] font-medium transition',
+                    'rounded-full px-3.5 py-1.5 text-xs font-semibold transition',
                     cat === i
-                      ? 'border-pine-900 bg-pine-900 text-canvas'
-                      : 'border-pine-900/25 text-pine-900 hover:border-pine-900',
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'border border-slate-200/80 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-700 dark:text-slate-200 hover:bg-slate-100',
                   )}
                 >
                   {c.bn}
@@ -290,7 +289,7 @@ export function CreatePostModal({
             type="button"
             onClick={publish}
             disabled={!ready}
-            className="h-10 rounded-lg border border-pine-900 bg-pine-900 px-5 text-[14px] font-semibold text-canvas shadow-tactile-sm shadow-tactile-hover disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+            className="h-11 rounded-full bg-emerald-600 hover:bg-emerald-700 px-6 text-[14px] font-bold text-white shadow-md disabled:cursor-not-allowed disabled:opacity-40 transition"
           >
             প্রকাশ করুন (Save to Supabase)
           </button>

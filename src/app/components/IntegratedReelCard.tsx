@@ -61,8 +61,7 @@ export function IntegratedReelCard({
           </p>
           <p className="flex items-center gap-1 text-[12px] text-pine-900/55">
             <Clapperboard className="size-3" />
-            Reel · <MapPin className="size-3" />
-            {reel.location}
+            Reel · {reel.duration}
           </p>
         </div>
       </header>
@@ -99,9 +98,6 @@ export function IntegratedReelCard({
             <span className="absolute bottom-4 left-3 right-16 text-left">
               <span className="block font-display text-[19px] font-semibold leading-tight text-white">
                 {reel.title}
-              </span>
-              <span className="mt-1 block font-mono text-[10.5px] text-white/70">
-                {formatBengaliNumberCompact(reel.views)} views
               </span>
             </span>
           </button>

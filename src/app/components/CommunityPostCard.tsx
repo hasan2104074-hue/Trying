@@ -224,12 +224,11 @@ export function CommunityPostCard({
           userReaction={post.userReaction}
           onOpenBreakdown={onOpenReactionsBreakdown}
           rightSlot={
-            <span className="flex gap-3">
+            post.stats.commentsCount > 0 ? (
               <button type="button" onClick={() => setShowComments((s) => !s)} className="hover:underline">
-                {toBengaliNumerals(post.stats.commentsCount)} comments
+                {toBengaliNumerals(post.stats.commentsCount)}টি মন্তব্য
               </button>
-              <span>{toBengaliNumerals(post.stats.shares)} shares</span>
-            </span>
+            ) : null
           }
         />
       </div>
@@ -287,12 +286,12 @@ export function CommunityPostCard({
                     onClick={() => onNavigateProfile(c.authorId)}
                     className="text-left text-[12.5px] font-semibold text-pine-900 hover:underline"
                   >
-                    {c.author} <span className="font-normal text-pine-900/55">· {c.role}</span>
+                    {c.author} <span className="font-normal text-emerald-700/80 dark:text-emerald-400">· {c.role}</span>
                   </button>
                   <p className="font-bangla text-[13.5px] leading-snug text-pine-900/85">{c.text}</p>
                 </div>
-                <div className="ml-2 mt-0.5 flex items-center gap-2 font-mono text-[10px] text-pine-600">
-                  <span>{c.timestamp}</span>
+                <div className="ml-2 mt-0.5 flex items-center gap-2 font-bangla text-[12px] font-medium text-emerald-800 dark:text-emerald-400">
+                  <span className="font-semibold">{c.timestamp}</span>
                   {onReactComment && (
                     <LinkedInReactionPickerButton
                       compact

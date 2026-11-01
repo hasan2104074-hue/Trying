@@ -139,21 +139,28 @@ export const setPostLinkedInReaction = (
 };
 
 export const appendArticleComment = (article: Article, newComment: Comment): Article => {
+  const nextComments = [newComment, ...article.comments.filter((c) => c.id !== newComment.id)];
   return {
     ...article,
-    comments: [newComment, ...article.comments],
+    comments: nextComments,
     stats: {
       ...article.stats,
-      commentsCount: article.stats.commentsCount + 1,
+      commentsCount: nextComments.length,
     },
   };
 };
 
-export const appendPostComment = (post: CommunityPost, c: Comment): CommunityPost => ({
-  ...post,
-  comments: [...post.comments, c],
-  stats: { ...post.stats, commentsCount: post.stats.commentsCount + 1 },
-});
+export const appendPostComment = (post: CommunityPost, c: Comment): CommunityPost => {
+  const nextComments = [...post.comments.filter((item) => item.id !== c.id), c];
+  return {
+    ...post,
+    comments: nextComments,
+    stats: {
+      ...post.stats,
+      commentsCount: nextComments.length,
+    },
+  };
+};
 
 export const makeComment = (
   text: string,

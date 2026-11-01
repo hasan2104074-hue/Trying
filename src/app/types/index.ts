@@ -70,19 +70,23 @@ export interface Comment {
 
 export interface Article {
   id: string;
+  slug?: string;
   title: string;
   subtitle: string;
   category: ArticleCategory;
   categoryEn: string;
   imageType: 'drone' | 'lab' | 'solar' | 'floating' | 'biotech' | 'sensor' | 'water' | 'fisheries';
   coverImageUrl?: string;
+  imageCaption?: string;
   authorId: string;
   author: {
     id?: string;
     name: string;
+    nameBn?: string;
     designation: string;
     organization: string;
     avatar: string;
+    isVerified?: boolean;
   };
   publishedAt: string;
   createdAt?: string;
@@ -231,11 +235,22 @@ export interface ResearchPaper {
 export interface NotificationItem {
   id: string;
   userId?: string;
+  recipientId?: string;
+  actorId?: string;
+  actorName?: string;
+  actorAvatar?: string;
+  type?: 'reaction' | 'comment' | 'bookmark' | 'follow' | 'system';
+  entityType?: 'article' | 'post' | 'reel' | 'profile' | 'comment';
+  entityId?: string;
   title: string;
+  message?: string;
   source: string;
   time: string;
   unread: boolean;
+  isRead?: boolean;
   targetRoute?: string;
+  targetUrl?: string;
+  createdAt?: string;
 }
 
 export interface StoreProduct {

@@ -1,8 +1,19 @@
 @custom-variant dark (&:is(.dark *));
 
+::selection {
+  background-color: #00ED64 !important;
+  color: #ffffff !important;
+}
+
+::-moz-selection {
+  background-color: #00ED64 !important;
+  color: #ffffff !important;
+}
+
 :root {
+  --icon-color: #064E3B;
   --font-size: 16px;
-  --background: #fdfaf5;
+  --background: #f4f6f8;
   --foreground: #061621;
   --card: #ffffff;
   --card-foreground: #061621;
@@ -10,18 +21,18 @@
   --popover-foreground: #061621;
   --primary: #00ED64;
   --primary-foreground: #061621;
-  --secondary: #f3f6f4;
+  --secondary: #edf1f4;
   --secondary-foreground: #061621;
-  --muted: #f3f6f4;
-  --muted-foreground: #4f6358;
+  --muted: #edf1f4;
+  --muted-foreground: #64748b;
   --accent: #e2fceb;
   --accent-foreground: #061621;
   --destructive: #d92d20;
   --destructive-foreground: #ffffff;
-  --border: #e2e8e4;
+  --border: #e2e8f0;
   --input: transparent;
-  --input-background: #f3f6f4;
-  --switch-background: #d1dbd4;
+  --input-background: #edf1f4;
+  --switch-background: #cbd5e1;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --ring: #00ED64;
@@ -30,14 +41,14 @@
   --chart-3: #f59e0b;
   --chart-4: #10b981;
   --chart-5: #6ee7b7;
-  --radius: 0.75rem;
-  --sidebar: #fdfaf5;
+  --radius: 1rem;
+  --sidebar: #f4f6f8;
   --sidebar-foreground: #061621;
   --sidebar-primary: #00ED64;
   --sidebar-primary-foreground: #061621;
   --sidebar-accent: #f0fdf4;
   --sidebar-accent-foreground: #061621;
-  --sidebar-border: #e2e8e4;
+  --sidebar-border: #e2e8f0;
   --sidebar-ring: #00ED64;
 
   /* Plainsyt Lime Green brand scale */
@@ -56,28 +67,28 @@
   --pine-200: #b3fad1;
   --pine-100: #e2fceb;
   --pine-50: #f0fdf4;
-  --canvas: #fdfaf5;
+  --canvas: #f4f6f8;
   --canvas-card: #ffffff;
-  --canvas-subtle: #f4f8f5;
-  --canvas-border: #e2e8e4;
-  --tactile: #061621;
+  --canvas-subtle: #edf1f4;
+  --canvas-border: #e2e8f0;
+  --tactile: transparent;
 }
 
 .dark {
   --background: #06120d;
-  --foreground: #f0fdf4;
+  --foreground: #ffffff;
   --card: #0a1c14;
-  --card-foreground: #f0fdf4;
+  --card-foreground: #ffffff;
   --popover: #0a1c14;
-  --popover-foreground: #f0fdf4;
+  --popover-foreground: #ffffff;
   --primary: #00ED64;
   --primary-foreground: #061621;
   --secondary: #0f271d;
-  --secondary-foreground: #f0fdf4;
+  --secondary-foreground: #ffffff;
   --muted: #0f271d;
-  --muted-foreground: #8aa696;
+  --muted-foreground: #f1f5f9;
   --accent: #133627;
-  --accent-foreground: #f0fdf4;
+  --accent-foreground: #ffffff;
   --destructive: #f04438;
   --destructive-foreground: #ffffff;
   --border: #1a3c2c;
@@ -93,11 +104,11 @@
   --chart-4: #f0fdf4;
   --chart-5: #10b981;
   --sidebar: #06120d;
-  --sidebar-foreground: #f0fdf4;
+  --sidebar-foreground: #ffffff;
   --sidebar-primary: #00ED64;
   --sidebar-primary-foreground: #061621;
   --sidebar-accent: #0f271d;
-  --sidebar-accent-foreground: #f0fdf4;
+  --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #1a3c2c;
   --sidebar-ring: #00ED64;
 
@@ -107,10 +118,10 @@
   --navbar-icon: #061621;
   --navbar-fg: #061621;
 
-  --pine-950: #f0fdf4;
-  --pine-900: #e2fceb;
-  --pine-800: #b3fad1;
-  --pine-700: #4ade80;
+  --pine-950: #ffffff;
+  --pine-900: #ffffff;
+  --pine-800: #f8fafc;
+  --pine-700: #f1f5f9;
   --pine-600: #00ED64;
   --pine-500: #00ED64;
   --pine-400: #29f57c;
@@ -122,6 +133,45 @@
   --canvas-subtle: #0f271d;
   --canvas-border: #1a3c2c;
   --tactile: #00ED64;
+
+  /* Tailwind slate palette mapped in dark mode to white or near-white */
+  --color-slate-950: #ffffff;
+  --color-slate-900: #ffffff;
+  --color-slate-800: #f8fafc;
+  --color-slate-700: #f8fafc;
+  --color-slate-600: #f1f5f9;
+  --color-slate-500: #f1f5f9;
+  --color-slate-400: #e2e8f0;
+  --color-slate-300: #e2e8f0;
+
+  /* Tailwind gray palette mapped in dark mode */
+  --color-gray-950: #ffffff;
+  --color-gray-900: #ffffff;
+  --color-gray-800: #f8fafc;
+  --color-gray-700: #f8fafc;
+  --color-gray-600: #f1f5f9;
+  --color-gray-500: #f1f5f9;
+  --color-gray-400: #e2e8f0;
+  --color-gray-300: #e2e8f0;
+
+  /* Tailwind zinc & neutral palettes */
+  --color-zinc-950: #ffffff;
+  --color-zinc-900: #ffffff;
+  --color-zinc-800: #f8fafc;
+  --color-zinc-700: #f8fafc;
+  --color-zinc-600: #f1f5f9;
+  --color-zinc-500: #f1f5f9;
+  --color-zinc-400: #e2e8f0;
+  --color-zinc-300: #e2e8f0;
+
+  --color-neutral-950: #ffffff;
+  --color-neutral-900: #ffffff;
+  --color-neutral-800: #f8fafc;
+  --color-neutral-700: #f8fafc;
+  --color-neutral-600: #f1f5f9;
+  --color-neutral-500: #f1f5f9;
+  --color-neutral-400: #e2e8f0;
+  --color-neutral-300: #e2e8f0;
 }
 
 @theme inline {
@@ -180,28 +230,71 @@
   --color-canvas-subtle: var(--canvas-subtle);
   --color-canvas-border: var(--canvas-border);
 
-  --font-display: "Volte Bangla", "Volte", sans-serif;
-  --font-sans: "Volte Bangla", "Volte", "Inter", sans-serif;
-  --font-bangla: "Volte Bangla", "Volte", sans-serif;
+  --font-display: "Hind Siliguri", "Inter", sans-serif;
+  --font-sans: "Hind Siliguri", "Inter", sans-serif;
+  --font-bangla: "Hind Siliguri", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
-@utility shadow-tactile-xs { box-shadow: 1.5px 1.5px 0px var(--tactile); }
-@utility shadow-tactile-sm { box-shadow: 2px 2px 0px var(--tactile); }
-@utility shadow-tactile { box-shadow: 3px 3px 0px var(--tactile); }
-@utility shadow-tactile-lg { box-shadow: 4px 4px 0px var(--tactile); }
+@utility shadow-tactile-xs { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04); }
+@utility shadow-tactile-sm { box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.06), 0 1px 3px 0 rgba(0, 0, 0, 0.03); }
+@utility shadow-tactile { box-shadow: 0 4px 20px -3px rgba(0, 0, 0, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.02); }
+@utility shadow-tactile-lg { box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.03); }
 @utility shadow-tactile-hover {
-  transition: transform 150ms ease, box-shadow 150ms ease;
-  &:hover { transform: translate(-1.5px, -1.5px); box-shadow: 4px 4px 0px var(--tactile); }
-  &:active { transform: translate(1px, 1px); box-shadow: 1.5px 1.5px 0px var(--tactile); }
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  &:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.09), 0 4px 10px -2px rgba(0, 0, 0, 0.04); }
+  &:active { transform: translateY(0px); box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.06); }
 }
 @utility no-scrollbar {
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
 }
 @utility paper-grain {
-  background-image: radial-gradient(rgba(4, 48, 31, 0.045) 1px, transparent 1px);
-  background-size: 4px 4px;
+  background-image: none;
+}
+
+/* Soften legacy brutalist black border strokes into modern clean borders */
+.border-pine-900:not(header *):not(.border-emerald-500) {
+  border-color: rgba(226, 232, 240, 0.9);
+}
+
+.dark .border-pine-900:not(header *):not(.border-emerald-500) {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.border-\[\#061621\]:not(header *):not([class*="bg-[#00ED64]"]) {
+  border-color: rgba(226, 232, 240, 0.9);
+}
+
+.dark .border-\[\#061621\]:not(header *):not([class*="bg-[#00ED64]"]) {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Centralized Global Dark Green Icon Color System (--icon-color: #064E3B) */
+.lucide, svg.lucide, [data-icon] {
+  color: var(--icon-color) !important;
+  stroke: var(--icon-color) !important;
+}
+
+/* Allow crisp white icons for active navigation, lightbox modals, and text-white components */
+.text-white .lucide,
+.text-white svg.lucide,
+.lightbox-ui .lucide,
+.lightbox-ui svg.lucide,
+.nav-active .lucide,
+.nav-active svg.lucide,
+button.text-white .lucide,
+button.text-white svg.lucide,
+[data-white-icon="true"] .lucide,
+[data-white-icon="true"] svg.lucide,
+[data-white-icon="true"] {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Preserve filled badges where appropriate while maintaining dark green stroke */
+.lucide-fill-current {
+  fill: var(--icon-color) !important;
 }
 
 @layer base {
@@ -291,3 +384,90 @@
   to { transform: scaleX(1); }
 }
 @keyframes blink { 50% { opacity: 0; } }
+
+/* ============================================================
+   Dark Mode Font Color Inversion & Contrast Guarantee
+   Requirement: In dark mode, no dark font color can be used;
+   all must be white or very close to white.
+   ============================================================ */
+.dark {
+  color: #ffffff;
+}
+
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: #ffffff;
+}
+
+.dark .text-slate-950,
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700,
+.dark .text-slate-600,
+.dark .text-gray-950,
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-gray-700,
+.dark .text-gray-600,
+.dark .text-zinc-950,
+.dark .text-zinc-900,
+.dark .text-zinc-800,
+.dark .text-zinc-700,
+.dark .text-zinc-600,
+.dark .text-neutral-950,
+.dark .text-neutral-900,
+.dark .text-neutral-800,
+.dark .text-neutral-700,
+.dark .text-neutral-600,
+.dark .text-black,
+.dark .text-pine-950,
+.dark .text-pine-900 {
+  color: #ffffff !important;
+}
+
+.dark .text-slate-500,
+.dark .text-slate-400,
+.dark .text-slate-300,
+.dark .text-gray-500,
+.dark .text-gray-400,
+.dark .text-zinc-500,
+.dark .text-zinc-400,
+.dark .text-neutral-500,
+.dark .text-neutral-400,
+.dark .text-pine-800,
+.dark .text-pine-700,
+.dark .text-muted-foreground {
+  color: #f1f5f9 !important;
+}
+
+/* Invert dark text color #061621 when not on a bright lime button / navbar */
+.dark [class*="text-[#061621]"]:not(header *):not(.bg-\[\#00ED64\] *):not([class*="bg-[#00ED64]"]):not([class*="bg-primary"]) {
+  color: #ffffff !important;
+}
+
+/* Card surfaces and inputs in dark mode to ensure clear contrast */
+.dark .bg-white:not(header *):not([class*="bg-[#00ED64]"]):not([class*="bg-primary"]):not([class*="bg-white/"]):not(.toast) {
+  background-color: #0b1e15 !important;
+  color: #ffffff !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-slate-100 {
+  background-color: #0f271d !important;
+  color: #f8fafc !important;
+}
+
+.dark .border-slate-200,
+.dark .border-slate-300,
+.dark .border-slate-100 {
+  border-color: #1a3c2c !important;
+}
+
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1a3c2c !important;
+}

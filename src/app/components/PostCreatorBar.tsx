@@ -19,8 +19,8 @@ export function PostCreatorBar(p: Props) {
     { label: 'Ask AI', icon: Sparkles, onClick: p.onAskAI, tone: 'text-[#b7791f]' },
   ];
   return (
-    <section className={cn(CARD, 'rounded-none border-x-0 shadow-none sm:rounded-xl sm:border-x sm:shadow-tactile')}>
-      <div className="flex items-center gap-2.5 px-3 pb-2.5 pt-3 sm:px-4">
+    <section className={cn(CARD, 'rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] overflow-hidden')}>
+      <div className="flex items-center gap-2.5 px-3.5 pb-2.5 pt-3 sm:px-4">
         <button type="button" onClick={p.onNavigateProfile} aria-label="Go to your profile">
           <Avatar
             src={p.currentUser?.avatar || 'PS'}
@@ -32,7 +32,7 @@ export function PostCreatorBar(p: Props) {
         <button
           type="button"
           onClick={p.onWriteArticle}
-          className="flex h-10 flex-1 items-center rounded-full border border-canvas-border bg-canvas-subtle px-4 text-left text-[14.5px] text-pine-900/55 transition hover:bg-pine-50"
+          className="flex h-10 flex-1 items-center rounded-full border border-slate-200/80 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-4 text-left text-[14px] text-slate-500 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-white/10"
         >
           What&apos;s on your mind, {firstName}?
         </button>
@@ -40,20 +40,20 @@ export function PostCreatorBar(p: Props) {
           type="button"
           onClick={p.onWriteArticle}
           aria-label="Add photo to article"
-          className="flex size-10 items-center justify-center rounded-full text-[#45bd62] transition hover:bg-canvas-subtle"
+          className="flex size-10 items-center justify-center rounded-full text-emerald-600 transition hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
         >
-          <ImageIcon className="size-6" />
+          <ImageIcon className="size-5" />
         </button>
       </div>
-      <div className="grid grid-cols-3 border-t border-canvas-border px-1.5 py-1">
+      <div className="grid grid-cols-3 border-t border-slate-100 dark:border-white/10 px-1.5 py-1">
         {actions.map((a) => (
           <button
             key={a.label}
             type="button"
             onClick={a.onClick}
-            className="flex flex-col items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-[11px] font-semibold text-pine-900/75 transition hover:bg-canvas-subtle sm:flex-row sm:gap-1.5 sm:py-2 sm:text-[13px]"
+            className="flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-1.5 text-[11px] font-semibold text-slate-600 dark:text-slate-200 transition hover:bg-slate-100/70 dark:hover:bg-white/5 sm:flex-row sm:gap-2 sm:py-2 sm:text-[13px]"
           >
-            <a.icon className={cn('size-[18px] shrink-0', a.tone)} />
+            <a.icon className={cn('size-4 shrink-0', a.tone)} />
             <span className="truncate">{a.label}</span>
           </button>
         ))}

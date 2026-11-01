@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MessageCircle, Bookmark, Share2, Clock, Send, Eye, ArrowRight, ExternalLink } from 'lucide-react';
+import { MessageCircle, Bookmark, Share2, Clock, Send, Eye, ArrowRight, ExternalLink, Calendar } from 'lucide-react';
 import type { Article, LinkedInReactionType, UserProfile } from '../types';
 import { ImageGraphic } from './ImageGraphic';
 import { Avatar, FEED_CARD, cn } from './Primitives';
@@ -51,26 +51,6 @@ export function ArticleCard({
 
   return (
     <article className={cn(FEED_CARD, 'overflow-hidden')}>
-      {lead && (
-        <div className="flex items-center justify-between border-b border-pine-900 bg-pine-900 px-4 py-1.5 text-canvas">
-          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em]">
-            Lead Story · প্রধান প্রতিবেদন
-          </span>
-          <div className="flex items-center gap-3">
-            <span className="font-mono text-[10px] tracking-wider opacity-70">{a.publishedAt}</span>
-            <a
-              href={`/article/${a.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded bg-white/15 px-1.5 py-0.5 font-mono text-[9.5px] text-white hover:bg-white/25"
-              title="Open in separate tab"
-            >
-              New Tab <ExternalLink className="size-2.5" />
-            </a>
-          </div>
-        </div>
-      )}
-
       <div
         role="button"
         tabIndex={0}
@@ -95,24 +75,25 @@ export function ArticleCard({
 
       <div className="px-4 pb-3 pt-4 sm:px-5">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full border border-pine-900 bg-pine-100 px-2.5 py-0.5 font-bangla text-[12px] font-semibold text-pine-800">
+          <span className="rounded-full border border-[#00ED64]/30 bg-[#00ED64]/10 dark:bg-[#00ED64]/15 px-3 py-0.5 font-bangla text-[12px] font-semibold text-[#008f3c] dark:text-[#00ED64]">
             {a.category}
           </span>
-          <span className="flex items-center gap-1 font-mono text-[10.5px] text-pine-600">
-            <Clock className="size-3" />
+          <span className="flex items-center gap-1 font-bangla text-[12px] text-slate-600 dark:text-slate-300">
+            <Clock className="size-3 text-[#00ED64]" />
             {toBengaliNumerals(a.readTimeMinutes)} মিনিট পড়া
           </span>
-          <span className="flex items-center gap-1 font-mono text-[10.5px] text-pine-600">
-            <Eye className="size-3" />
-            {formatBengaliNumberCompact(a.stats.views)}
+          {/* Post Date & Time replacing Views count */}
+          <span className="flex items-center gap-1 font-bangla text-[12px] text-slate-600 dark:text-slate-300">
+            <Calendar className="size-3 text-[#00ED64]" />
+            {a.publishedAt}
           </span>
           <a
             href={`/article/${a.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-auto inline-flex items-center gap-1 font-mono text-[10.5px] text-pine-600 hover:text-pine-900 hover:underline"
+            className="ml-auto inline-flex items-center gap-1 font-bangla text-[11px] text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-[#00ED64] hover:underline"
           >
-            Open Tab <ExternalLink className="size-3" />
+            নতুন ট্যাব <ExternalLink className="size-3" />
           </a>
         </div>
 
@@ -147,7 +128,7 @@ export function ArticleCard({
               >
                 {a.author.name}
               </button>
-              <span className="block truncate font-mono text-[10.5px] text-pine-600">
+              <span className="block truncate font-bangla text-[12px] text-slate-600 dark:text-slate-400">
                 {a.author.designation} {a.author.organization ? `· ${a.author.organization}` : ''}
               </span>
             </span>
@@ -155,9 +136,10 @@ export function ArticleCard({
           <button
             type="button"
             onClick={onOpenPopup}
-            className="hidden shrink-0 items-center gap-1 rounded-md border border-pine-900 bg-canvas-card px-2.5 py-1.5 text-[12px] font-semibold text-pine-900 shadow-tactile-xs shadow-tactile-hover sm:inline-flex"
+            className="hidden shrink-0 items-center gap-1.5 rounded-full bg-[#00ED64] hover:bg-[#00d859] px-4 py-1.5 text-[12.5px] font-bold text-[#061621] transition active:scale-95 shadow-sm sm:inline-flex"
           >
-            পড়ুন <ArrowRight className="size-3.5" />
+            <span>পড়ুন</span>
+            <ArrowRight className="size-3.5 text-[#061621]" strokeWidth={2.5} />
           </button>
         </div>
 
@@ -229,12 +211,12 @@ export function ArticleCard({
                     onClick={() => onNavigateProfile(c.authorId)}
                     className="font-bangla text-[12.5px] font-semibold text-pine-900 hover:underline"
                   >
-                    {c.author} <span className="font-normal text-pine-900/50">· {c.role}</span>
+                    {c.author} <span className="font-normal text-emerald-700/80 dark:text-emerald-400">· {c.role}</span>
                   </button>
                   <p className="font-bangla text-[13.5px] leading-snug text-pine-900/85">{c.text}</p>
                 </div>
-                <div className="ml-2 mt-0.5 flex items-center gap-2 font-mono text-[10px] text-pine-600">
-                  <span>{c.timestamp}</span>
+                <div className="ml-2 mt-0.5 flex items-center gap-2 font-bangla text-[12px] font-medium text-emerald-800 dark:text-emerald-400">
+                  <span className="font-semibold">{c.timestamp}</span>
                   {onReactComment && (
                     <LinkedInReactionPickerButton
                       compact

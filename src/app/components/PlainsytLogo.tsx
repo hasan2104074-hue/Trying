@@ -68,9 +68,9 @@ export function PlainsytLogo({
       className={cn('inline-flex items-center focus:outline-none transition-transform hover:opacity-95 active:scale-95', className)}
       aria-label="Plainsyt Home"
     >
-      {/* Mobile view ONLY: green bd icon */}
+      {/* Mobile view ONLY: green bd icon (no outline or border) */}
       <div className="flex items-center md:hidden">
-        <PlainsytMark className="size-8 rounded-lg border border-[#061621]/20 shadow-sm" />
+        <PlainsytMark className="size-8 rounded-lg border-none outline-none ring-0 shadow-none" />
       </div>
 
       {/* Desktop view ONLY: Plainsyt Bangla Logo, NO background, single logo */}

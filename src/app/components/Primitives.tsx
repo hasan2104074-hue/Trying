@@ -4,7 +4,8 @@ import { clsx } from 'clsx';
 
 export const cn = (...a: (string | false | null | undefined)[]) => clsx(a);
 
-export const CARD = 'rounded-xl border border-pine-900 bg-canvas-card shadow-tactile';
+export const CARD =
+  'rounded-2xl border border-slate-200/80 dark:border-white/10 bg-canvas-card shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all duration-200';
 
 const TONES = ['bg-pine-100 text-pine-800', 'bg-[#f6e7c8] text-[#6b4a12]', 'bg-[#e8e1f5] text-[#3d2b6b]', 'bg-[#fbe1d8] text-[#7a2e16]', 'bg-[#dcecf5] text-[#163f5c]'];
 
@@ -16,15 +17,19 @@ export function Avatar({
   const code0 = s.charCodeAt(0) || 65;
   const code1 = s.charCodeAt(1) || 66;
   const tone = TONES[(code0 + code1) % TONES.length];
-  const initials = (name || s || 'PS').trim().slice(0, 2).toUpperCase();
+  const isPlainsytAvatar = Boolean(
+    (name && (name.toLowerCase().includes('plainsyt') || name.includes('প্লেইনসাইট'))) ||
+    s.toLowerCase().includes('icon.png') ||
+    (s.toLowerCase().includes('plainsyt') && isUrl)
+  );
 
   return (
     <span className={cn('relative inline-flex shrink-0', size, className)}>
       <span
         className={cn(
           'flex size-full items-center justify-center overflow-hidden rounded-full font-semibold text-[0.7em] leading-none select-none',
-          ring ? 'ring-2 ring-pine-500 ring-offset-2 ring-offset-canvas-card' : 'border border-pine-900/15',
-          !isUrl && tone,
+          ring ? 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-canvas-card' : 'border border-slate-200/60 dark:border-white/10',
+          isPlainsytAvatar ? 'bg-[#00ED64]' : (!isUrl && tone),
         )}
       >
         {isUrl ? (
@@ -37,14 +42,14 @@ export function Avatar({
                 e.currentTarget.parentElement.classList.add(tone);
               }
             }}
-            className="size-full object-cover text-transparent"
+            className={cn('size-full text-transparent', isPlainsytAvatar ? 'object-contain p-1' : 'object-cover')}
           />
         ) : (
           <span className="text-[12px] font-bold">{initials}</span>
         )}
       </span>
       {online && (
-        <span className="absolute bottom-0 right-0 size-[28%] min-h-2.5 min-w-2.5 rounded-full border-2 border-canvas-card bg-[#31a24c]" />
+        <span className="absolute bottom-0 right-0 size-[28%] min-h-2.5 min-w-2.5 rounded-full border-2 border-canvas-card bg-[#00ED64]" />
       )}
     </span>
   );
@@ -52,7 +57,7 @@ export function Avatar({
 
 export function VerifiedBadge() {
   return (
-    <svg viewBox="0 0 16 16" className="inline size-3.5 shrink-0 text-pine-500" aria-label="Verified">
+    <svg viewBox="0 0 16 16" className="inline size-3.5 shrink-0 text-[#00ED64]" aria-label="Verified">
       <path fill="currentColor" d="M8 0l2 1.6 2.5-.2.7 2.4 2.2 1.3-.9 2.4.9 2.4-2.2 1.3-.7 2.4-2.5-.2L8 16l-2-1.6-2.5.2-.7-2.4L.6 10.9l.9-2.4-.9-2.4 2.2-1.3.7-2.4 2.5.2z" />
       <path fill="none" stroke="var(--canvas-card)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" d="M5 8.2l2 2 4-4.2" />
     </svg>
@@ -76,7 +81,7 @@ export function Modal({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby={labelledBy}>
-      <button aria-label="Close" className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" onClick={onClose} />
+      <button aria-label="Close" className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onClick={onClose} />
       <div className={cn('relative max-h-[100dvh] w-full overflow-y-auto sm:max-h-[92vh]', className)}>{children}</div>
     </div>
   );
@@ -87,18 +92,19 @@ export function CloseButton({ onClick, className }: { onClick: () => void; class
     <button
       onClick={onClick}
       aria-label="Close"
-      className={cn('flex size-9 items-center justify-center rounded-full bg-canvas-subtle text-pine-900 transition hover:bg-pine-100', className)}
+      className={cn('flex size-8 items-center justify-center rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-300 transition hover:bg-slate-200 dark:hover:bg-white/20 active:scale-95', className)}
     >
-      <X className="size-5" />
+      <X className="size-4" />
     </button>
   );
 }
 
 export function SectionLabel({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <p className={cn('font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-pine-600', className)}>{children}</p>
+    <p className={cn('font-sans text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500', className)}>{children}</p>
   );
 }
 
 export const FEED_CARD =
-  'border-y border-pine-900/80 bg-canvas-card sm:rounded-xl sm:border sm:border-pine-900 sm:shadow-tactile';
+  'border-y border-slate-200/70 dark:border-white/10 bg-canvas-card sm:rounded-2xl sm:border sm:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] sm:hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all duration-200';
+

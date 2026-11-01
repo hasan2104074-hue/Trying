@@ -271,6 +271,11 @@ export function BkashCheckoutModal({
       return;
     }
 
+    if (orders.some((o) => o.trxId.toUpperCase() === finalTrx)) {
+      setFormError('এই ট্রানজেকশন আইডিটি (TrxID) ইতিমধ্যে অন্য একটি অর্ডারে ব্যবহৃত হয়েছে। অনুগ্রহ করে সঠিক TrxID লিখুন।');
+      return;
+    }
+
     const order: BkashOrder = {
       id: `ord-${Date.now().toString(36)}`,
       orderNumber: `ORD-${Date.now().toString().slice(-6)}`,
@@ -335,7 +340,7 @@ export function BkashCheckoutModal({
                 <p className="font-mono text-[10.5px] opacity-80">
                   {step === 'cart' && `${detailedItems.length} টি পণ্য`}
                   {step === 'bkash' && 'Direct Secure Checkout'}
-                  {step === 'receipt' && 'Payment Verified'}
+                  {step === 'receipt' && 'পেমেন্ট যাচাই প্রক্রিয়াধীন · Verification Pending'}
                 </p>
               </div>
             </div>
@@ -630,12 +635,15 @@ export function BkashCheckoutModal({
           {/* Drawer Body: Step 3 (Receipt) */}
           {step === 'receipt' && completedOrder && (
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              <div className="rounded-xl border border-[#00ED64] bg-pine-50 p-4 text-center">
+              <div className="rounded-xl border border-[#00ED64]/40 bg-[#00ED64]/10 p-4 text-center">
                 <Check className="mx-auto size-12 text-[#00ED64]" />
                 <h3 className="mt-2 font-bangla text-[18px] font-bold text-pine-950">
-                  অর্ডার সফল হয়েছে!
+                  অর্ডার সফলভাবে গৃহীত হয়েছে!
                 </h3>
-                <p className="font-mono text-[11px] text-pine-600">
+                <p className="mt-1 font-bangla text-[12.5px] font-semibold text-emerald-800">
+                  পেমেন্ট যাচাই প্রক্রিয়াধীন · অ্যাডমিন নিরীক্ষা শেষে ডেলিভারি শুরু হবে।
+                </p>
+                <p className="mt-1 font-mono text-[11px] text-pine-600">
                   Order #{completedOrder.orderNumber} · TrxID: {completedOrder.trxId}
                 </p>
               </div>

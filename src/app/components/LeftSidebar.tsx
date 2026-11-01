@@ -1,9 +1,8 @@
 import React from 'react';
-import { Newspaper, Clapperboard, Bookmark, Bot, Settings, Compass, Sparkles, Plane, Wheat, BookOpenText, CloudSun, Snowflake, Rocket } from 'lucide-react';
+import { Newspaper, Bot, Settings, Compass, Sparkles, Plane, Wheat, BookOpenText, CloudSun, Snowflake, Rocket } from 'lucide-react';
 import type { Article, StoryReel, UserProfile } from '../types';
 import { Avatar, SectionLabel, cn } from './Primitives';
 import { toBengaliNumerals } from '../utils/pureLogic';
-import { Footer } from './Footer';
 
 export const PILLAR_DEFS = [
   { key: 'drone', label: 'Agri-Tech & Drones', bn: 'এগ্রি-টেক ও ড্রোন', cats: ['এগ্রি-টেক ও ড্রোন'], icon: Plane },
@@ -23,6 +22,7 @@ interface Props {
   onOpenReels: () => void;
   onOpenAI: () => void;
   onOpenProfileSettings: () => void;
+  onOpenAuth?: () => void;
   onNavigate: (path: string) => void;
   activePillar: string | null;
   onPillar: (k: string | null) => void;
@@ -45,20 +45,6 @@ export function LeftSidebar(p: Props) {
       tone: 'bg-blue-50 text-blue-700',
     },
     {
-      label: 'ভিডিও রিলস',
-      icon: Clapperboard,
-      onClick: p.onOpenReels,
-      badge: p.reels.length ? toBengaliNumerals(p.reels.length) : null,
-      tone: 'bg-rose-50 text-rose-700',
-    },
-    {
-      label: 'সংরক্ষিত পোস্ট',
-      icon: Bookmark,
-      onClick: p.onOpenSaved,
-      badge: p.savedCount ? toBengaliNumerals(p.savedCount) : null,
-      tone: 'bg-purple-50 text-purple-700',
-    },
-    {
       label: 'AI সহকারী',
       icon: Bot,
       onClick: p.onOpenAI,
@@ -68,8 +54,11 @@ export function LeftSidebar(p: Props) {
   ];
 
   return (
-    <aside className="hidden lg:block w-52 shrink-0">
-      <div className="sticky top-[76px] flex max-h-[calc(100vh-90px)] flex-col gap-3.5 overflow-y-auto no-scrollbar pb-6 pr-1">
+    <aside
+      className="hidden lg:block fixed left-0 top-[60px] md:top-[65px] bottom-0 w-56 xl:w-64 z-20 overflow-y-auto no-scrollbar pl-4 pr-3 pt-3.5 pb-6 border-r border-slate-200/70 dark:border-white/5 bg-background transition-colors"
+      style={{ left: 0, marginLeft: 0 }}
+    >
+      <div className="flex flex-col gap-3.5">
         {p.currentUser ? (
           <div className="flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white p-2 shadow-sm">
             <button
@@ -96,36 +85,29 @@ export function LeftSidebar(p: Props) {
               <Settings className="size-3.5" />
             </button>
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={p.onOpenProfileSettings}
-            className="flex items-center justify-between rounded-xl border border-dashed border-slate-300 bg-white px-2.5 py-2 text-left shadow-sm hover:border-[#00ED64] transition"
-          >
-            <div>
-              <span className="block text-xs font-semibold text-slate-800">প্রোফাইল সাজান</span>
-              <span className="block text-[10px] text-slate-500">ছবি ও বিবরণ যোগ করুন</span>
-            </div>
-            <Settings className="size-3.5 text-slate-400" />
-          </button>
-        )}
+        ) : null}
 
-        <nav className="flex flex-col gap-0.5">
+        <nav className="flex flex-col gap-1">
           {shortcuts.map((s) => (
             <button
               key={s.label}
               type="button"
               onClick={s.onClick}
-              className="group flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition hover:bg-slate-100/80"
+              className="group flex items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-all duration-150 hover:bg-slate-100/90 dark:hover:bg-white/5 active:scale-98"
             >
-              <span className={cn('flex size-7 items-center justify-center rounded-md border border-slate-200/60', s.tone)}>
-                <s.icon className="size-3.5" />
+              <span
+                className={cn(
+                  'flex size-9 shrink-0 items-center justify-center rounded-xl border border-slate-200/70 dark:border-white/10 transition-all duration-200 group-hover:scale-105 group-hover:bg-[#00ED64] group-hover:border-[#00ED64] group-hover:text-[#061621] group-hover:shadow-sm',
+                  s.tone,
+                )}
+              >
+                <s.icon className="size-5 transition-transform duration-200 group-hover:scale-110" />
               </span>
-              <span className="flex-1 text-xs font-medium text-slate-800 group-hover:text-slate-950 font-sans">
+              <span className="flex-1 font-bangla text-[13.5px] font-semibold text-slate-800 dark:text-slate-200 group-hover:text-black dark:group-hover:text-white transition-colors">
                 {s.label}
               </span>
               {s.badge && (
-                <span className="rounded-full bg-slate-900 px-1.5 py-0.2 font-mono text-[9px] font-semibold text-white">
+                <span className="rounded-full bg-slate-900 dark:bg-white/10 px-2 py-0.5 font-mono text-[9.5px] font-bold text-white">
                   {s.badge}
                 </span>
               )}
@@ -134,8 +116,10 @@ export function LeftSidebar(p: Props) {
         </nav>
 
         {/* Quick Topics */}
-        <div className="border-t border-slate-200/80 pt-3">
-          <SectionLabel className="mb-2 px-1 text-[10px]">জনপ্রিয় বিষয়সমূহ</SectionLabel>
+        <div className="border-t border-slate-200/80 dark:border-white/10 pt-3">
+          <h3 className="mb-2.5 px-1 font-bangla text-[14px] font-bold text-black dark:text-white">
+            জনপ্রিয় বিষয়সমূহ
+          </h3>
           <div className="flex flex-col gap-1">
             {[
               { name: 'বিজ্ঞান ও প্রযুক্তি', cat: 'টেকনোলজি' },
@@ -148,17 +132,13 @@ export function LeftSidebar(p: Props) {
                 key={topic.name}
                 type="button"
                 onClick={() => p.onNavigate('/explore')}
-                className="flex items-center justify-between rounded-lg px-2 py-1 text-left text-xs text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 transition"
+                className="group flex items-center justify-between rounded-lg px-2 py-1.5 text-left font-bangla text-[13px] font-medium text-black dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition"
               >
-                <span className="truncate">{topic.name}</span>
-                <Sparkles className="size-2.5 text-slate-400" />
+                <span className="truncate group-hover:text-[#008f3c] dark:group-hover:text-[#00ED64] transition-colors">{topic.name}</span>
+                <Sparkles className="size-3 text-slate-400 group-hover:text-[#00ED64] transition-colors shrink-0" />
               </button>
             ))}
           </div>
-        </div>
-
-        <div className="pt-2">
-          <Footer compact />
         </div>
       </div>
     </aside>

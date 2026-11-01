@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bookmark, Share2, Clock, FlaskConical, Send, Eye, ExternalLink } from 'lucide-react';
+import { Bookmark, Share2, Clock, FlaskConical, Send, Eye, ExternalLink, Calendar } from 'lucide-react';
 import type { Article, LinkedInReactionType, UserProfile } from '../types';
 import { Modal, CloseButton, Avatar, SectionLabel, cn } from './Primitives';
 import { ImageGraphic } from './ImageGraphic';
@@ -40,9 +40,9 @@ export function ArticleReaderContent({
   const rxTotal = totalReactions(a.reactionCounts, a.stats.likes);
 
   return (
-    <article className="rounded-t-2xl border border-pine-900 bg-canvas shadow-tactile-lg sm:rounded-2xl">
-      <div className="sticky top-0 z-10 flex items-center justify-between rounded-t-2xl border-b border-pine-900 bg-canvas px-4 py-2.5">
-        <span className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-pine-600">
+    <article className="rounded-t-3xl border border-slate-200/80 dark:border-white/10 bg-canvas-card shadow-2xl sm:rounded-3xl overflow-hidden">
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 dark:border-white/10 bg-canvas-card/95 backdrop-blur-md px-5 py-3">
+        <span className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400 font-semibold">
           Plainsyt · {a.categoryEn}
         </span>
         <div className="flex items-center gap-1.5">
@@ -51,7 +51,7 @@ export function ArticleReaderContent({
               href={`/article/${a.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-8 items-center gap-1 rounded-lg border border-pine-900/30 bg-canvas-subtle px-2.5 font-mono text-[11px] font-semibold text-pine-900 hover:border-pine-900 hover:bg-pine-100"
+              className="inline-flex h-8 items-center gap-1.5 rounded-full border border-slate-200/80 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-3 font-mono text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition"
               title="Open in separate browser tab"
             >
               Open in New Tab <ExternalLink className="size-3.5" />
@@ -63,8 +63,8 @@ export function ArticleReaderContent({
             aria-pressed={bookmarked}
             aria-label="Bookmark"
             className={cn(
-              'flex size-9 items-center justify-center rounded-full hover:bg-canvas-subtle',
-              bookmarked ? 'text-pine-600' : 'text-pine-900',
+              'flex size-9 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 transition',
+              bookmarked ? 'text-emerald-600' : 'text-slate-600 dark:text-slate-200',
             )}
           >
             <Bookmark className={cn('size-[18px]', bookmarked && 'fill-current')} />
@@ -85,6 +85,12 @@ export function ArticleReaderContent({
             : undefined
         }
       />
+
+      {a.imageCaption && (
+        <figcaption className="border-b border-slate-100 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] px-5 py-2.5 font-bangla text-[12.5px] leading-relaxed text-slate-600 dark:text-slate-400 italic">
+          {a.imageCaption}
+        </figcaption>
+      )}
 
       <div className="px-5 pb-8 pt-6 sm:px-10">
         <p className="font-bangla text-[13px] font-semibold text-pine-600">{a.category}</p>
@@ -118,32 +124,31 @@ export function ArticleReaderContent({
               >
                 {a.author.name}
               </button>
-              <span className="block font-mono text-[10.5px] text-pine-600">
+              <span className="block font-bangla text-[12.5px] text-slate-600 dark:text-slate-300">
                 {a.author.designation} {a.author.organization ? `· ${a.author.organization}` : ''}
               </span>
             </div>
           </div>
-          <span className="ml-auto flex items-center gap-3 font-mono text-[10.5px] text-pine-600">
-            <span>{a.publishedAt}</span>
+          <span className="ml-auto flex items-center gap-3 font-bangla text-[12px] text-slate-600 dark:text-slate-300">
             <span className="flex items-center gap-1">
-              <Clock className="size-3" />
-              {toBengaliNumerals(a.readTimeMinutes)} মিনিট
+              <Calendar className="size-3 text-[#00ED64]" />
+              {a.publishedAt}
             </span>
             <span className="flex items-center gap-1">
-              <Eye className="size-3" />
-              {formatBengaliNumberCompact(a.stats.views)}
+              <Clock className="size-3 text-[#00ED64]" />
+              {toBengaliNumerals(a.readTimeMinutes)} মিনিট
             </span>
           </span>
         </div>
 
         {a.takeaways.length > 0 && (
-          <aside className="mt-6 rounded-xl border border-pine-900 bg-pine-50 p-4 shadow-tactile-sm">
+          <aside className="mt-6 rounded-2xl border border-emerald-100 dark:border-emerald-950/40 bg-emerald-50/50 dark:bg-emerald-950/20 p-5 shadow-sm">
             <SectionLabel>মূল কথা · Key takeaways</SectionLabel>
-            <ol className="mt-2 space-y-1.5">
+            <ol className="mt-3 space-y-2">
               {a.takeaways.map((t, i) => (
-                <li key={t + i} className="flex gap-2.5 font-bangla text-[14.5px] text-pine-900">
-                  <span className="font-mono text-[11px] font-semibold text-pine-600">
-                    {String(i + 1).padStart(2, '0')}
+                <li key={t + i} className="flex gap-2.5 font-bangla text-[14.5px] text-slate-800 dark:text-slate-100">
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-600/10 text-emerald-700 dark:text-emerald-400 font-mono text-[11px] font-bold">
+                    {i + 1}
                   </span>
                   {t}
                 </li>
@@ -152,13 +157,13 @@ export function ArticleReaderContent({
           </aside>
         )}
 
-        <div className="mt-6 space-y-4 font-bangla text-[17px] leading-[1.85] text-pine-900/90">
+        <div className="mt-6 space-y-4 font-bangla text-[17px] leading-[1.85] text-slate-800 dark:text-slate-100">
           {a.content.map((para, i) => (
             <p
               key={i}
               className={cn(
                 i === 0 &&
-                  'first-letter:float-left first-letter:mr-2 first-letter:font-display first-letter:text-[52px] first-letter:font-bold first-letter:leading-[0.9] first-letter:text-pine-700',
+                  'first-letter:float-left first-letter:mr-2.5 first-letter:font-display first-letter:text-[50px] first-letter:font-bold first-letter:leading-[0.88] first-letter:text-emerald-700 dark:first-letter:text-emerald-400',
               )}
             >
               {para}
@@ -172,7 +177,7 @@ export function ArticleReaderContent({
               href={a.externalLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-pine-900 bg-pine-50 px-3.5 py-2 font-mono text-[12px] font-semibold text-pine-900 shadow-tactile-xs"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-4 py-2 font-mono text-[12px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition"
             >
               External Reference / Source Link <ExternalLink className="size-3.5" />
             </a>
@@ -180,14 +185,14 @@ export function ArticleReaderContent({
         )}
 
         {a.researchBasis && (
-          <div className="mt-7 grid gap-3 rounded-lg border border-dashed border-pine-900/40 p-4 font-mono text-[11.5px] text-pine-900 sm:grid-cols-[auto_1fr_auto] sm:items-center">
-            <FlaskConical className="size-5 text-pine-600" />
+          <div className="mt-7 grid gap-3 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 p-4 font-mono text-[11.5px] text-slate-700 dark:text-slate-200 sm:grid-cols-[auto_1fr_auto] sm:items-center">
+            <FlaskConical className="size-5 text-emerald-600" />
             <div>
-              <p className="uppercase tracking-wider text-pine-600">Research basis</p>
-              <p className="mt-0.5">{a.researchBasis.journalOrInst}</p>
-              <p className="text-pine-900/60">{a.researchBasis.doiOrSource}</p>
+              <p className="uppercase tracking-wider text-emerald-600 font-semibold text-[10px]">Research basis</p>
+              <p className="mt-0.5 font-medium">{a.researchBasis.journalOrInst}</p>
+              <p className="text-slate-500 dark:text-slate-400">{a.researchBasis.doiOrSource}</p>
             </div>
-            <span className="rounded-md border border-pine-900 bg-canvas-card px-2.5 py-1.5 text-[13px] font-semibold shadow-tactile-xs">
+            <span className="rounded-full border border-emerald-200/80 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 text-[12px] font-semibold text-emerald-800 dark:text-emerald-300">
               {a.researchBasis.keyMetric}
             </span>
           </div>
@@ -203,7 +208,7 @@ export function ArticleReaderContent({
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <div className="rounded-lg border border-pine-900 bg-canvas-card shadow-tactile-xs">
+          <div className="rounded-full border border-slate-200/80 dark:border-white/10 bg-canvas-card shadow-sm">
             <LinkedInReactionPickerButton
               userReaction={a.userReaction}
               onSelect={onReact}
@@ -213,16 +218,16 @@ export function ArticleReaderContent({
           <button
             type="button"
             onClick={onShare}
-            className="flex h-10 items-center gap-2 rounded-lg border border-pine-900 bg-canvas-card px-4 text-[14px] font-semibold text-pine-900 shadow-tactile-xs shadow-tactile-hover"
+            className="flex h-10 items-center gap-2 rounded-full border border-slate-200/80 dark:border-white/10 bg-canvas-card px-4 text-[14px] font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-white/5 transition"
           >
             <Share2 className="size-[18px]" />
             Share
           </button>
         </div>
 
-        <section className="mt-8 border-t border-pine-900 pt-5">
-          <h2 className="font-display text-[22px] font-semibold text-pine-900">
-            আলোচনা <span className="font-mono text-[13px] text-pine-600">({toBengaliNumerals(a.stats.commentsCount)})</span>
+        <section className="mt-8 border-t border-slate-100 dark:border-white/10 pt-5">
+          <h2 className="font-display text-[22px] font-semibold text-slate-900 dark:text-white">
+            আলোচনা <span className="font-mono text-[13px] text-emerald-600">({toBengaliNumerals(a.stats.commentsCount)})</span>
           </h2>
           <form
             onSubmit={(e) => {
@@ -235,19 +240,19 @@ export function ArticleReaderContent({
             className="mt-3 flex items-start gap-2.5"
           >
             <Avatar src={currentUser?.avatar || 'PS'} name={currentUser?.name || 'User'} size="size-9" />
-            <div className="flex-1 rounded-xl border border-pine-900/30 bg-canvas-card focus-within:border-pine-900">
+            <div className="flex-1 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 focus-within:border-emerald-500 focus-within:bg-white dark:focus-within:bg-canvas-card transition p-2">
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 rows={2}
                 placeholder="তথ্যভিত্তিক মতামত দিন…"
-                className="w-full resize-none bg-transparent px-3 py-2 font-bangla text-[14.5px] text-pine-900 outline-none placeholder:text-pine-900/40"
+                className="w-full resize-none bg-transparent px-2 py-1 font-bangla text-[14.5px] text-slate-900 dark:text-white outline-none placeholder:text-slate-400"
               />
-              <div className="flex justify-end px-2 pb-2">
+              <div className="flex justify-end pt-1">
                 <button
                   type="submit"
                   disabled={!text.trim()}
-                  className="flex h-8 items-center gap-1.5 rounded-md bg-pine-900 px-3 text-[12.5px] font-semibold text-canvas disabled:opacity-40"
+                  className="flex h-8 items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 px-4 text-[12.5px] font-semibold text-white shadow-sm disabled:opacity-40 transition"
                 >
                   <Send className="size-3.5" />
                   Post Comment
@@ -276,11 +281,11 @@ export function ArticleReaderContent({
                     }}
                     className="font-bangla text-[13.5px] font-semibold text-pine-900 hover:underline"
                   >
-                    {c.author} <span className="font-normal text-pine-900/50">· {c.role}</span>
+                    {c.author} <span className="font-normal text-emerald-700/80 dark:text-emerald-400">· {c.role}</span>
                   </button>
                   <p className="font-bangla text-[14.5px] leading-relaxed text-pine-900/85">{c.text}</p>
-                  <div className="mt-1 flex items-center gap-2 font-mono text-[10px] text-pine-600">
-                    <span>{c.timestamp}</span>
+                  <div className="mt-1 flex items-center gap-2 font-bangla text-[12px] font-medium text-emerald-800 dark:text-emerald-400">
+                    <span className="font-semibold">{c.timestamp}</span>
                     {onReactComment && (
                       <LinkedInReactionPickerButton
                         compact

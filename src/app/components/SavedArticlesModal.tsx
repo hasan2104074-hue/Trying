@@ -30,15 +30,15 @@ export function SavedList({ articles, posts, onOpenArticle, onRemoveArticle, onR
           <SectionLabel className="mb-2">Articles · {toBengaliNumerals(articles.length)}</SectionLabel>
           <ul className="space-y-2.5">
             {articles.map((a) => (
-              <li key={a.id} className="flex items-center gap-3 rounded-lg border border-pine-900 bg-canvas-card p-2 shadow-tactile-xs">
+              <li key={a.id} className="flex items-center gap-3 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-canvas-card p-3 shadow-xs">
                 <button onClick={() => onOpenArticle(a.id)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                  <ImageGraphic type={a.imageType} className="size-16 shrink-0 rounded-md [&_span]:hidden" />
+                  <ImageGraphic type={a.imageType} className="size-16 shrink-0 rounded-xl [&_span]:hidden" />
                   <span className="min-w-0">
-                    <span className="line-clamp-2 font-bangla text-[14px] font-semibold leading-snug text-pine-900">{a.title}</span>
-                    <span className="font-mono text-[10.5px] text-pine-600">{a.categoryEn} · {a.readTimeMinutes} min</span>
+                    <span className="line-clamp-2 font-bangla text-[14px] font-semibold leading-snug text-slate-900 dark:text-white">{a.title}</span>
+                    <span className="font-mono text-[10.5px] text-emerald-600 dark:text-emerald-400">{a.categoryEn} · {a.readTimeMinutes} min</span>
                   </span>
                 </button>
-                <button onClick={() => onRemoveArticle(a.id)} aria-label="Remove" className="flex size-9 shrink-0 items-center justify-center rounded-full text-pine-900/60 hover:bg-canvas-subtle hover:text-[#c01048]"><BookmarkX className="size-[18px]" /></button>
+                <button onClick={() => onRemoveArticle(a.id)} aria-label="Remove" className="flex size-9 shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-600 transition"><BookmarkX className="size-[18px]" /></button>
               </li>
             ))}
           </ul>
@@ -49,13 +49,13 @@ export function SavedList({ articles, posts, onOpenArticle, onRemoveArticle, onR
           <SectionLabel className="mb-2">Posts · {toBengaliNumerals(posts.length)}</SectionLabel>
           <ul className="space-y-2.5">
             {posts.map((p) => (
-              <li key={p.id} className="flex items-start gap-3 rounded-lg border border-canvas-border bg-canvas-card p-3">
+              <li key={p.id} className="flex items-start gap-3 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-canvas-card p-3 shadow-xs">
                 <Avatar src={p.author.avatar} name={p.author.name} size="size-9" />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[13.5px] font-semibold text-pine-900">{p.author.name}</span>
-                  <span className="line-clamp-2 font-bangla text-[13px] text-pine-900/70">{p.content}</span>
+                  <span className="block text-[13.5px] font-semibold text-slate-900 dark:text-white">{p.author.name}</span>
+                  <span className="line-clamp-2 font-bangla text-[13px] text-slate-600 dark:text-slate-300">{p.content}</span>
                 </span>
-                <button onClick={() => onRemovePost(p.id)} aria-label="Remove" className="flex size-9 shrink-0 items-center justify-center rounded-full text-pine-900/60 hover:bg-canvas-subtle hover:text-[#c01048]"><BookmarkX className="size-[18px]" /></button>
+                <button onClick={() => onRemovePost(p.id)} aria-label="Remove" className="flex size-9 shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-600 transition"><BookmarkX className="size-[18px]" /></button>
               </li>
             ))}
           </ul>
@@ -68,15 +68,15 @@ export function SavedList({ articles, posts, onOpenArticle, onRemoveArticle, onR
 export function SavedArticlesModal(p: Props) {
   return (
     <Modal open={p.open} onClose={p.onClose} className="max-w-[560px]" labelledBy="saved-title">
-      <div className="rounded-t-2xl border border-pine-900 bg-canvas shadow-tactile-lg sm:rounded-2xl">
-        <div className="flex items-center justify-between border-b border-pine-900 px-5 py-3.5">
+      <div className="rounded-t-3xl border border-slate-200/80 dark:border-white/10 bg-canvas-card shadow-2xl sm:rounded-3xl overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 px-6 py-4">
           <div>
-            <h2 id="saved-title" className="font-display text-[22px] font-semibold text-pine-900">সংরক্ষিত তালিকা</h2>
-            <p className="font-mono text-[10.5px] tracking-wider text-pine-600">Reading list · {toBengaliNumerals(p.articles.length + p.posts.length)} items</p>
+            <h2 id="saved-title" className="font-display text-[22px] font-semibold text-slate-900 dark:text-white">সংরক্ষিত তালিকা</h2>
+            <p className="font-mono text-[10.5px] tracking-wider text-emerald-600 dark:text-emerald-400">Reading list · {toBengaliNumerals(p.articles.length + p.posts.length)} items</p>
           </div>
           <CloseButton onClick={p.onClose} />
         </div>
-        <div className="max-h-[70vh] overflow-y-auto p-5">
+        <div className="max-h-[70vh] overflow-y-auto p-6">
           <SavedList {...p} onOpenArticle={(id) => { p.onClose(); p.onOpenArticle(id); }} />
         </div>
       </div>

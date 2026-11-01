@@ -62,10 +62,10 @@ export function TrendingList({
               <span className="line-clamp-2 font-sans text-xs font-semibold leading-snug text-slate-900 group-hover:text-emerald-700">
                 {a.title}
               </span>
-              <span className="mt-1 flex items-center gap-2 font-mono text-[10px] text-slate-400">
-                <span className="flex items-center gap-0.5">
-                  <Eye className="size-2.5" />
-                  {formatBengaliNumberCompact(a.stats.views)}
+              <span className="mt-1 flex items-center gap-2 font-bangla text-[11px] text-slate-500 dark:text-slate-400">
+                <span className="flex items-center gap-1">
+                  <Calendar className="size-2.5 text-[#00ED64]" />
+                  {a.publishedAt}
                 </span>
                 <span className="flex items-center gap-0.5">
                   <MessageCircle className="size-2.5" />
@@ -169,12 +169,14 @@ export function RightSidebar(p: Props) {
   const otherProfiles = p.profiles.filter((u) => u.id !== p.currentUserId && !u.id.startsWith('mock_')).slice(0, 4);
 
   return (
-    <aside className="hidden lg:block w-60 shrink-0">
-      <div className="sticky top-[76px] flex max-h-[calc(100vh-90px)] flex-col gap-3.5 overflow-y-auto no-scrollbar pb-6 pl-1 pr-1">
+    <aside
+      className="hidden lg:block fixed right-0 top-[60px] md:top-[65px] bottom-0 w-68 xl:w-76 z-20 overflow-y-auto no-scrollbar pr-4 pl-3 pt-3.5 pb-6 border-l border-slate-200/70 dark:border-white/5 bg-background transition-colors"
+      style={{ right: 0, marginRight: 0 }}
+    >
+      <div className="flex flex-col gap-3.5">
         <section className={cn(CARD, 'p-3')}>
-          <div className="flex items-baseline justify-between mb-1">
-            <h3 className="font-sans text-sm font-bold text-slate-900">ট্রেন্ডিং</h3>
-            <SectionLabel className="text-[10px]">জনপ্রিয়</SectionLabel>
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="font-bangla text-[15px] font-bold text-black dark:text-white">ট্রেন্ডিং</h3>
           </div>
           <TrendingList
             articles={p.articles}
@@ -183,17 +185,13 @@ export function RightSidebar(p: Props) {
           />
         </section>
 
-        <section className={cn(CARD, 'p-3')}>
-          <div className="flex items-baseline justify-between mb-1">
-            <h3 className="font-sans text-sm font-bold text-slate-900">আসন্ন ইভেন্ট</h3>
-            <SeeAllLink onClick={() => p.onNavigate('/events')}>সব দেখুন</SeeAllLink>
-          </div>
-          {p.events.length === 0 ? (
-            <p className="py-4 text-center font-sans text-xs text-slate-400">
-              কোনো আসন্ন ইভেন্ট নেই।
-            </p>
-          ) : (
-            <ul className="divide-y divide-slate-100">
+        {p.events.length > 0 && (
+          <section className={cn(CARD, 'p-3')}>
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-bangla text-[15px] font-bold text-black dark:text-white">আসন্ন ইভেন্ট</h3>
+              <SeeAllLink onClick={() => p.onNavigate('/events')}>সব দেখুন</SeeAllLink>
+            </div>
+            <ul className="divide-y divide-slate-100 dark:divide-white/5">
               {p.events.slice(0, 3).map((e) => (
                 <EventRow
                   key={e.id}
@@ -203,12 +201,12 @@ export function RightSidebar(p: Props) {
                 />
               ))}
             </ul>
-          )}
-        </section>
+          </section>
+        )}
 
         {otherProfiles.length > 0 && (
           <section className={cn(CARD, 'p-3')}>
-            <h3 className="font-sans text-sm font-bold text-slate-900 mb-2">অনুসরণ করুন</h3>
+            <h3 className="font-bangla text-[15px] font-bold text-black dark:text-white mb-2">অনুসরণ করুন</h3>
             <ul className="divide-y divide-slate-100">
               {otherProfiles.map((s) => {
                 const isFollowing = p.followingIds.includes(s.id);

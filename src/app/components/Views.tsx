@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import {
   ArrowBigUp, ShoppingBag, Lightbulb, Plus, Bell, Settings, ExternalLink, MapPin, Globe2,
-  UserPlus, Check, Camera, Palette, Sparkles, Calendar, Users,
+  UserPlus, Check, Camera, Palette, Sparkles, Calendar, Users, Trash2, PenLine, Clapperboard,
+  CheckCheck, Clock, ArrowRight, MessageSquare, AlertTriangle, Filter, LogIn, LogOut,
 } from 'lucide-react';
 import type {
   Article, BkashOrder, CartItem, CommunityIdea, CommunityPost, LinkedInReactionType,
-  NotificationItem, ReactionTargetType, StoreProduct, UpcomingEvent, UserProfile,
+  NotificationItem, ReactionTargetType, StoreProduct, TopicStory, UpcomingEvent, UserProfile,
 } from '../types';
 import { CARD, FEED_CARD, SectionLabel, Avatar, VerifiedBadge, cn } from './Primitives';
 import { PILLAR_DEFS } from './LeftSidebar';
@@ -71,8 +72,34 @@ export function ExploreView({
         sub="ছয়টি প্রধান বিষয়ে সাজানো চিন্তাশীল প্রবন্ধ, বিশ্লেষণ ও নিবন্ধের সংগ্রহশালা।"
       />
 
-      <div className="grid grid-cols-2 gap-2.5 px-3 sm:grid-cols-3 sm:px-0">
-        {PILLAR_DEFS.map((p, i) => {
+      {/* Ultra-Modern Compact Category Options */}
+      <div className="flex flex-wrap items-center gap-2 px-1">
+        <button
+          type="button"
+          onClick={() => onPillar(null)}
+          aria-pressed={pillar === null}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all duration-200 active:scale-95 border shadow-xs',
+            pillar === null
+              ? 'bg-[#061621] text-white border-[#00ED64] ring-1 ring-[#00ED64]/50 shadow-sm'
+              : 'bg-white dark:bg-[#0b2433] text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-white/10 hover:border-[#00ED64]/60 hover:text-black dark:hover:text-white',
+          )}
+        >
+          <Sparkles className={cn('size-3.5', pillar === null ? 'text-[#00ED64]' : 'text-slate-500')} />
+          <span className="font-bangla font-semibold">সকল বিষয়</span>
+          <span
+            className={cn(
+              'font-mono text-[10px] px-1.5 py-0.5 rounded-full font-bold',
+              pillar === null
+                ? 'bg-[#00ED64] text-[#061621]'
+                : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300',
+            )}
+          >
+            {toBengaliNumerals(articles.length)}
+          </span>
+        </button>
+
+        {PILLAR_DEFS.map((p) => {
           const Icon = p.icon;
           const active = pillar === p.key;
           const count = articles.filter((a) => (p.cats as readonly string[]).includes(a.category)).length;
@@ -83,22 +110,24 @@ export function ExploreView({
               onClick={() => onPillar(active ? null : p.key)}
               aria-pressed={active}
               className={cn(
-                'rounded-xl border p-3.5 text-left transition-all',
+                'inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all duration-200 active:scale-95 border shadow-xs',
                 active
-                  ? 'border-[#061621] bg-[#061621] text-white shadow-md'
-                  : 'border-slate-200 bg-white text-slate-800 hover:border-slate-300 shadow-xs',
+                  ? 'bg-[#061621] text-white border-[#00ED64] ring-1 ring-[#00ED64]/50 shadow-sm'
+                  : 'bg-white dark:bg-[#0b2433] text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-white/10 hover:border-[#00ED64]/60 hover:text-black dark:hover:text-white',
               )}
             >
-              <div className="flex items-center justify-between">
-                <Icon className={cn('size-5', active ? 'text-[#00ED64]' : 'text-slate-700')} />
-                <span className={cn('font-mono text-[10px]', active ? 'text-white/60' : 'text-slate-400')}>
-                  0{i + 1}
-                </span>
-              </div>
-              <p className="mt-4 text-sm font-semibold leading-tight">{p.label}</p>
-              <p className={cn('font-sans text-xs mt-0.5', active ? 'text-white/70' : 'text-slate-500')}>
-                {p.bn} · {toBengaliNumerals(count)}
-              </p>
+              <Icon className={cn('size-3.5', active ? 'text-[#00ED64]' : 'text-slate-500')} />
+              <span className="font-bangla font-semibold">{p.bn}</span>
+              <span
+                className={cn(
+                  'font-mono text-[10px] px-1.5 py-0.5 rounded-full font-bold',
+                  active
+                    ? 'bg-[#00ED64] text-[#061621]'
+                    : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300',
+                )}
+              >
+                {toBengaliNumerals(count)}
+              </span>
             </button>
           );
         })}
@@ -490,42 +519,180 @@ export function IdeasView({
 export function NotificationsView({
   items,
   onRead,
+  onToggleRead,
+  onDelete,
+  onNavigate,
+  onOpenArticle,
+  onNavigateProfile,
 }: {
   items: NotificationItem[];
   onRead: () => void;
+  onToggleRead?: (id: string, isRead: boolean) => void;
+  onDelete?: (id: string) => void;
+  onNavigate: (path: string) => void;
+  onOpenArticle?: (id: string) => void;
+  onNavigateProfile?: (userId: string) => void;
 }) {
+  const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
+
+  const filtered = useMemo(() => {
+    return items.filter((n) => {
+      const isUnread = n.isRead !== undefined ? !n.isRead : n.unread;
+      if (filter === 'unread') return isUnread;
+      if (filter === 'read') return !isUnread;
+      return true;
+    });
+  }, [items, filter]);
+
+  const unreadCount = items.filter((n) => (n.isRead !== undefined ? !n.isRead : n.unread)).length;
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-end justify-between pr-3 sm:pr-0">
-        <ViewHeader kicker="বিজ্ঞপ্তি ও আপডেট" title="নোটিফিকেশন" />
-        <button
-          type="button"
-          onClick={onRead}
-          className="mb-3 font-mono text-[10px] uppercase tracking-wider text-slate-500 hover:text-slate-900"
-        >
-          সব পড়া হয়েছে চিহ্নিত করুন
-        </button>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-3 px-3 sm:px-0">
+        <div>
+          <SectionLabel>রিয়েলটাইম বিজ্ঞপ্তি ও কার্যকলাপ</SectionLabel>
+          <h1 className="mt-1 font-display text-[28px] font-bold leading-tight tracking-[-0.01em] text-slate-900 sm:text-[36px]">
+            সকল নোটিফিকেশন
+          </h1>
+          <p className="mt-1 font-sans text-sm text-slate-600">
+            মোট {toBengaliNumerals(items.length)}টি বিজ্ঞপ্তি · {toBengaliNumerals(unreadCount)}টি অপঠিত
+          </p>
+        </div>
+        {unreadCount > 0 && (
+          <button
+            type="button"
+            onClick={onRead}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-800 shadow-xs hover:bg-slate-50 transition"
+          >
+            <CheckCheck className="size-4 text-emerald-600" /> সব পড়া হয়েছে চিহ্নিত করুন
+          </button>
+        )}
       </div>
-      {items.length === 0 ? (
-        <section className={cn(FEED_CARD, 'p-8 text-center font-sans text-sm text-slate-500')}>
-          কোনো নতুন নোটিফিকেশন নেই।
+
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-slate-200 px-3 sm:px-0 pb-1">
+        {[
+          { key: 'all', label: `সকল (${toBengaliNumerals(items.length)})` },
+          { key: 'unread', label: `অপঠিত (${toBengaliNumerals(unreadCount)})` },
+          { key: 'read', label: `পড়া হয়েছে (${toBengaliNumerals(items.length - unreadCount)})` },
+        ].map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setFilter(t.key as typeof filter)}
+            className={cn(
+              'px-3.5 py-1.5 rounded-full text-xs font-bold transition',
+              filter === t.key
+                ? 'bg-[#061621] text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <section className={cn(FEED_CARD, 'p-12 text-center')}>
+          <Bell className="mx-auto size-10 text-slate-300" />
+          <h2 className="mt-3 font-sans text-base font-bold text-slate-800">
+            {filter === 'unread' ? 'কোনো অপঠিত বিজ্ঞপ্তি নেই' : 'কোনো বিজ্ঞপ্তি পাওয়া যায়নি'}
+          </h2>
+          <p className="mt-1 font-sans text-xs text-slate-500">
+            আপনার নিবন্ধ বা পোস্টে নতুন প্রতিক্রিয়া বা মন্তব্য এলে এখানে দেখতে পাবেন।
+          </p>
         </section>
       ) : (
         <ul className={cn(FEED_CARD, 'divide-y divide-slate-100')}>
-          {items.map((n) => (
-            <li key={n.id} className={cn('flex gap-3 px-4 py-3.5', n.unread && 'bg-emerald-50/50')}>
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700">
-                <Bell className="size-4" />
-              </span>
-              <span className="flex-1">
-                <span className="block font-sans text-sm leading-snug text-slate-900">{n.title}</span>
-                <span className="mt-0.5 block font-mono text-[10px] text-slate-400">
-                  {n.source} · {n.time}
-                </span>
-              </span>
-              {n.unread && <span className="mt-2 size-2 rounded-full bg-[#00ED64]" />}
-            </li>
-          ))}
+          {filtered.map((n) => {
+            const isUnread = n.isRead !== undefined ? !n.isRead : n.unread;
+            const dest = n.targetUrl || n.targetRoute || '/';
+            return (
+              <li
+                key={n.id}
+                className={cn(
+                  'flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 transition-colors',
+                  isUnread ? 'bg-emerald-50/40' : 'hover:bg-slate-50/70',
+                )}
+              >
+                <div className="flex items-start gap-3 min-w-0 flex-1">
+                  <button
+                    type="button"
+                    onClick={() => n.actorId && onNavigateProfile?.(n.actorId)}
+                    className="shrink-0 mt-0.5"
+                    title={n.actorName || n.source}
+                  >
+                    <Avatar
+                      src={n.actorAvatar || ''}
+                      name={n.actorName || n.source || 'PS'}
+                      size="size-10"
+                    />
+                  </button>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="font-sans text-sm font-semibold text-slate-900 leading-snug">
+                      {n.message || n.title}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 font-mono text-[11px] text-slate-500">
+                      <span>{n.time}</span>
+                      <span>·</span>
+                      <span className="font-sans font-semibold text-emerald-700">
+                        {n.actorName || n.source}
+                      </span>
+                      <span>·</span>
+                      <span className="uppercase text-[9.5px] bg-slate-100 px-1.5 py-0.5 rounded">
+                        {n.type || 'system'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onToggleRead && isUnread) {
+                        onToggleRead(n.id, true);
+                      }
+                      if (dest.startsWith('/article/')) {
+                        const artId = dest.replace('/article/', '');
+                        onOpenArticle ? onOpenArticle(artId) : onNavigate(dest);
+                      } else {
+                        onNavigate(dest);
+                      }
+                    }}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-emerald-50 border border-emerald-200/80 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition"
+                  >
+                    গন্তব্যে যান <ArrowRight className="size-3" />
+                  </button>
+
+                  {onToggleRead && (
+                    <button
+                      type="button"
+                      onClick={() => onToggleRead(n.id, !isUnread)}
+                      aria-label={isUnread ? 'Mark read' : 'Mark unread'}
+                      title={isUnread ? 'পড়া হয়েছে হিসেবে চিহ্নিত করুন' : 'অপঠিত হিসেবে চিহ্নিত করুন'}
+                      className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      {isUnread ? 'পড়া হয়েছে' : 'অপঠিত করুন'}
+                    </button>
+                  )}
+
+                  {onDelete && (
+                    <button
+                      type="button"
+                      onClick={() => onDelete(n.id)}
+                      aria-label="Delete notification"
+                      title="বিজ্ঞপ্তি মুছে ফেলুন"
+                      className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-rose-600 hover:border-rose-200 transition"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
@@ -539,6 +706,7 @@ export function ProfileView({
   currentUser,
   authorArticles,
   authorPosts,
+  authorStories = [],
   savedArticles,
   savedPosts,
   orders,
@@ -547,7 +715,15 @@ export function ProfileView({
   onToggleDark,
   onToggleFollow,
   onOpenProfileSettings,
+  onOpenAuth,
+  onLogout,
   onOpenArticlePopup,
+  onOpenCreatePost,
+  onOpenCreateStory,
+  onOpenWriteArticle,
+  onDeletePost,
+  onDeleteStory,
+  onDeleteArticle,
   onReact,
   onOpenReactionsBreakdown,
   onBookmarkArticle,
@@ -566,6 +742,7 @@ export function ProfileView({
   currentUser: UserProfile | null;
   authorArticles: Article[];
   authorPosts: CommunityPost[];
+  authorStories?: TopicStory[];
   savedArticles: Article[];
   savedPosts: CommunityPost[];
   orders: BkashOrder[];
@@ -574,7 +751,15 @@ export function ProfileView({
   onToggleDark: () => void;
   onToggleFollow: () => void;
   onOpenProfileSettings: () => void;
+  onOpenAuth?: () => void;
+  onLogout?: () => void;
   onOpenArticlePopup: (id: string) => void;
+  onOpenCreatePost?: () => void;
+  onOpenCreateStory?: () => void;
+  onOpenWriteArticle?: () => void;
+  onDeletePost?: (id: string) => void;
+  onDeleteStory?: (id: string) => void;
+  onDeleteArticle?: (id: string) => void;
   onReact: (targetType: ReactionTargetType, targetId: string, type: LinkedInReactionType) => void;
   onOpenReactionsBreakdown: (targetType: ReactionTargetType, targetId: string) => void;
   onBookmarkArticle: (id: string) => void;
@@ -587,7 +772,12 @@ export function ProfileView({
   onNavigateProfile: (userId: string) => void;
   onOpenPhoto: (images: string[], index: number, title?: string, subtitle?: string, authorName?: string, authorId?: string) => void;
 }) {
-  const [tab, setTab] = useState<'articles' | 'posts' | 'saved' | 'orders'>('articles');
+  const [tab, setTab] = useState<'articles' | 'posts' | 'stories' | 'saved' | 'orders'>('articles');
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    type: 'post' | 'story' | 'article';
+    id: string;
+    title: string;
+  } | null>(null);
 
   if (!profile) {
     return (
@@ -678,6 +868,16 @@ export function ProfileView({
                   >
                     <Settings className="size-3.5" /> সেটিংস
                   </button>
+                  {onLogout && (
+                    <button
+                      type="button"
+                      onClick={onLogout}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50/50 px-3 text-xs font-semibold text-rose-600 hover:bg-rose-100"
+                      title="সাইন আউট করুন"
+                    >
+                      <LogOut className="size-3.5" /> সাইন আউট
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={onToggleDark}
@@ -725,11 +925,6 @@ export function ProfileView({
             </p>
             <div className="mt-1 flex flex-wrap items-center gap-3 font-mono text-[10.5px] text-slate-400">
               <span>@{profile.handle}</span>
-              {profile.location && (
-                <span className="flex items-center gap-1 font-sans">
-                  <MapPin className="size-2.5" /> {profile.location}
-                </span>
-              )}
               {profile.website && (
                 <a
                   href={profile.website}
@@ -748,21 +943,27 @@ export function ProfileView({
             )}
           </div>
 
-          <dl className="mt-4 grid grid-cols-4 rounded-lg border border-slate-200 text-center">
+          {/* Compact Modern Single-line Stats */}
+          <div className="mt-3.5 flex flex-wrap items-center gap-2 sm:gap-2.5">
             {[
               ['প্রতিবেদন', authorArticles.length],
               ['পোস্ট', authorPosts.length],
+              ['স্টোরি', authorStories.length],
               ['অনুসারী', profile.followersCount + (isFollowing ? 1 : 0)],
-              ['মোট প্রকাশনা', profile.publicationsCount + authorArticles.length],
             ].map(([k, v]) => (
-              <div key={String(k)} className="border-r border-slate-200 py-2 last:border-0">
-                <dd className="font-sans text-lg font-bold text-slate-900">
+              <div
+                key={String(k)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 dark:border-white/10 bg-slate-50/90 dark:bg-white/5 px-3 py-1 font-bangla text-xs transition hover:bg-slate-100 dark:hover:bg-white/10 shadow-2xs"
+              >
+                <span className="font-bold text-black dark:text-white font-mono text-[13px]">
                   {toBengaliNumerals(Number(v))}
-                </dd>
-                <dt className="font-sans text-[10px] text-slate-400">{k}</dt>
+                </span>
+                <span className="text-slate-600 dark:text-slate-300 text-[12px] font-medium">
+                  {k}
+                </span>
               </div>
             ))}
-          </dl>
+          </div>
         </div>
 
         {/* Profile Navigation Tabs */}
@@ -771,6 +972,7 @@ export function ProfileView({
             [
               { key: 'articles', label: `প্রতিবেদন (${authorArticles.length})` },
               { key: 'posts', label: `পোস্ট (${authorPosts.length})` },
+              { key: 'stories', label: `স্টোরি (${authorStories.length})` },
               ...(isOwnProfile
                 ? [
                     { key: 'saved', label: `সংরক্ষিত (${savedArticles.length + savedPosts.length})` },
@@ -797,6 +999,81 @@ export function ProfileView({
         </div>
       </section>
 
+      {/* Profile Content Management Options for Authenticated Author */}
+      {isOwnProfile && (
+        <section className={cn(FEED_CARD, 'p-4 sm:p-5')}>
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 pb-3">
+            <div>
+              <p className="font-mono text-[10.5px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-bold">
+                কন্টেন্ট প্রকাশনা ও ব্যবস্থাপনা · Content Management
+              </p>
+              <h2 className="font-sans text-base font-bold text-slate-900 dark:text-white mt-0.5">
+                নতুন কন্টেন্ট প্রকাশ করুন
+              </h2>
+            </div>
+            <span className="rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/60 dark:border-emerald-800/60 px-2.5 py-0.5 font-mono text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
+              {profile.role || 'Member'}
+            </span>
+          </div>
+
+          <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <button
+              type="button"
+              onClick={onOpenCreatePost}
+              className="group flex items-center gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3 text-left hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition"
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600/10 text-emerald-700 dark:text-emerald-400">
+                <PenLine className="size-4" />
+              </span>
+              <div>
+                <p className="font-sans text-xs font-bold text-slate-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
+                  পোস্ট তৈরি করুন
+                </p>
+                <p className="font-sans text-[11px] text-slate-500">
+                  মতামত ও প্রযুক্তি আপডেট শেয়ার
+                </p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={onOpenCreateStory}
+              className="group flex items-center gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3 text-left hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition"
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600/10 text-emerald-700 dark:text-emerald-400">
+                <Clapperboard className="size-4" />
+              </span>
+              <div>
+                <p className="font-sans text-xs font-bold text-slate-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
+                  স্টোরি তৈরি করুন
+                </p>
+                <p className="font-sans text-[11px] text-slate-500">
+                  ২৪ ঘণ্টার ভিজ্যুয়াল স্টোরি
+                </p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={onOpenWriteArticle}
+              className="group flex items-center gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3 text-left hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition"
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600/10 text-emerald-700 dark:text-emerald-400">
+                <Plus className="size-4" />
+              </span>
+              <div>
+                <p className="font-sans text-xs font-bold text-slate-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
+                  প্রতিবেদন লিখুন
+                </p>
+                <p className="font-sans text-[11px] text-slate-500">
+                  সম্পাদকীয় ও গবেষণা প্রবন্ধ
+                </p>
+              </div>
+            </button>
+          </div>
+        </section>
+      )}
+
       {tab === 'articles' && (
         <div className="space-y-4">
           {authorArticles.length === 0 ? (
@@ -805,23 +1082,33 @@ export function ProfileView({
             </section>
           ) : (
             authorArticles.map((a) => (
-              <ArticleCard
-                key={a.id}
-                article={a}
-                bookmarked={bookmarkIds.includes(a.id)}
-                currentUser={currentUser}
-                onOpenPopup={() => onOpenArticlePopup(a.id)}
-                onReact={(type) => onReact('article', a.id, type)}
-                onOpenReactionsBreakdown={() => onOpenReactionsBreakdown('article', a.id)}
-                onBookmark={() => onBookmarkArticle(a.id)}
-                onComment={(t) => onCommentArticle(a.id, t)}
-                onReactComment={(cid, type) => onReact('comment', cid, type)}
-                onShare={() => onShare(a.title)}
-                onNavigateProfile={onNavigateProfile}
-                onOpenPhoto={(src, title, subtitle, authorName, authorId) =>
-                  onOpenPhoto([src], 0, title, subtitle, authorName, authorId)
-                }
-              />
+              <div key={a.id} className="relative group">
+                <ArticleCard
+                  article={a}
+                  bookmarked={bookmarkIds.includes(a.id)}
+                  currentUser={currentUser}
+                  onOpenPopup={() => onOpenArticlePopup(a.id)}
+                  onReact={(type) => onReact('article', a.id, type)}
+                  onOpenReactionsBreakdown={() => onOpenReactionsBreakdown('article', a.id)}
+                  onBookmark={() => onBookmarkArticle(a.id)}
+                  onComment={(t) => onCommentArticle(a.id, t)}
+                  onReactComment={(cid, type) => onReact('comment', cid, type)}
+                  onShare={() => onShare(a.title)}
+                  onNavigateProfile={onNavigateProfile}
+                  onOpenPhoto={(src, title, subtitle, authorName, authorId) =>
+                    onOpenPhoto([src], 0, title, subtitle, authorName, authorId)
+                  }
+                />
+                {isOwnProfile && onDeleteArticle && (
+                  <button
+                    type="button"
+                    onClick={() => setDeleteConfirm({ type: 'article', id: a.id, title: a.title })}
+                    className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 inline-flex items-center gap-1 rounded-lg bg-rose-600 text-white px-2.5 py-1 text-xs font-bold shadow-md hover:bg-rose-700 transition"
+                  >
+                    <Trash2 className="size-3" /> মুছুন
+                  </button>
+                )}
+              </div>
             ))
           )}
         </div>
@@ -835,22 +1122,88 @@ export function ProfileView({
             </section>
           ) : (
             authorPosts.map((p) => (
-              <CommunityPostCard
-                key={p.id}
-                post={p}
-                currentUser={currentUser}
-                onReact={(type) => onReact('post', p.id, type)}
-                onOpenReactionsBreakdown={() => onOpenReactionsBreakdown('post', p.id)}
-                onSave={() => onSavePost(p.id)}
-                onComment={(t) => onCommentPost(p.id, t)}
-                onReactComment={(cid, type) => onReact('comment', cid, type)}
-                onShare={() => onShare(p.author.name)}
-                onNavigateProfile={onNavigateProfile}
-                onOpenPhoto={(imgs, idx, title, authorName, authorId) =>
-                  onOpenPhoto(imgs, idx, title, undefined, authorName, authorId)
-                }
-              />
+              <div key={p.id} className="relative group">
+                <CommunityPostCard
+                  post={p}
+                  currentUser={currentUser}
+                  onReact={(type) => onReact('post', p.id, type)}
+                  onOpenReactionsBreakdown={() => onOpenReactionsBreakdown('post', p.id)}
+                  onSave={() => onSavePost(p.id)}
+                  onComment={(t) => onCommentPost(p.id, t)}
+                  onReactComment={(cid, type) => onReact('comment', cid, type)}
+                  onShare={() => onShare(p.author.name)}
+                  onNavigateProfile={onNavigateProfile}
+                  onOpenPhoto={(imgs, idx, title, authorName, authorId) =>
+                    onOpenPhoto(imgs, idx, title, undefined, authorName, authorId)
+                  }
+                />
+                {isOwnProfile && onDeletePost && (
+                  <button
+                    type="button"
+                    onClick={() => setDeleteConfirm({ type: 'post', id: p.id, title: p.content.slice(0, 30) })}
+                    className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 inline-flex items-center gap-1 rounded-lg bg-rose-600 text-white px-2.5 py-1 text-xs font-bold shadow-md hover:bg-rose-700 transition z-10"
+                  >
+                    <Trash2 className="size-3" /> মুছুন
+                  </button>
+                )}
+              </div>
             ))
+          )}
+        </div>
+      )}
+
+      {tab === 'stories' && (
+        <div className="space-y-4">
+          {authorStories.length === 0 ? (
+            <section className={cn(FEED_CARD, 'p-8 text-center font-sans text-sm text-slate-500')}>
+              এখনো কোনো সক্রিয় স্টোরি প্রকাশিত হয়নি।
+              {isOwnProfile && (
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={onOpenCreateStory}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#00ED64] px-4 py-1.5 text-xs font-bold text-[#061621]"
+                  >
+                    <Plus className="size-3.5" /> নতুন স্টোরি যোগ করুন
+                  </button>
+                </div>
+              )}
+            </section>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {authorStories.map((s) => (
+                <div key={s.id} className={cn(FEED_CARD, 'overflow-hidden group relative flex flex-col')}>
+                  <div className="relative aspect-[9/14] w-full overflow-hidden bg-slate-900">
+                    <img
+                      src={s.imageUrl}
+                      alt={s.title}
+                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
+                    <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 rounded-full bg-emerald-600/90 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+                      <Clock className="size-2.5" /> ২৪ ঘণ্টা সক্রিয়
+                    </div>
+                    {isOwnProfile && onDeleteStory && (
+                      <button
+                        type="button"
+                        onClick={() => setDeleteConfirm({ type: 'story', id: s.id, title: s.title })}
+                        className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 flex size-7 items-center justify-center rounded-full bg-rose-600 text-white shadow hover:bg-rose-700 transition"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    )}
+                    <div className="absolute bottom-3 inset-x-3 text-white">
+                      <span className="font-mono text-[10px] uppercase text-[#00ED64]">
+                        {s.category}
+                      </span>
+                      <p className="mt-1 font-sans text-xs font-bold leading-snug line-clamp-2">
+                        {s.title}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}
@@ -890,6 +1243,48 @@ export function ProfileView({
             ))
           )}
         </section>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-[#061621] border border-slate-200 dark:border-white/10 p-5 shadow-2xl">
+            <div className="flex items-center gap-3 text-rose-600 mb-2">
+              <AlertTriangle className="size-5" />
+              <h3 className="font-sans font-bold text-base text-slate-900 dark:text-white">
+                কন্টেন্ট মুছে ফেলার নিশ্চিতকরণ
+              </h3>
+            </div>
+            <p className="font-sans text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+              আপনি কি নিশ্চিতভাবে এই {deleteConfirm.type === 'post' ? 'পোস্টটি' : deleteConfirm.type === 'story' ? 'স্টোরিটি' : 'প্রতিবেদনটি'} মুছে ফেলতে চান? এটি ডাটাবেজ থেকে স্থায়ীভাবে মুছে যাবে।
+            </p>
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirm(null)}
+                className="h-8 px-3 rounded-lg border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5"
+              >
+                বাতিল
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (deleteConfirm.type === 'post' && onDeletePost) {
+                    onDeletePost(deleteConfirm.id);
+                  } else if (deleteConfirm.type === 'story' && onDeleteStory) {
+                    onDeleteStory(deleteConfirm.id);
+                  } else if (deleteConfirm.type === 'article' && onDeleteArticle) {
+                    onDeleteArticle(deleteConfirm.id);
+                  }
+                  setDeleteConfirm(null);
+                }}
+                className="h-8 px-3 rounded-lg bg-rose-600 text-xs font-bold text-white hover:bg-rose-700"
+              >
+                স্থায়ীভাবে মুছুন
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

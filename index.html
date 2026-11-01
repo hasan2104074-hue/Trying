@@ -5,11 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Plainsyt (প্লেইনসাইট) — কৃষি ও কৃষিপ্রযুক্তি প্ল্যাটফর্ম | Agri-Tech Bangladesh</title>
     <link rel="icon" type="image/png" href="/logos/icon.png" />
+    <link rel="shortcut icon" type="image/png" href="/icon.png" />
+    <link rel="apple-touch-icon" href="/logos/icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#00ED64" />
     <meta name="description" content="বাংলাদেশের আধুনিক কৃষি, শস্যবিজ্ঞান, ড্রোন সেন্সিং, বায়োচার, কোল্ড চেইন ও এগ্রি-টেক উদ্ভাবনের প্ল্যাটফর্ম। সরাসরি কৃষক, বিজ্ঞানী ও উদ্যোক্তাদের সংযোগ।" />
     <meta property="og:title" content="Plainsyt (প্লেইনসাইট) — কৃষি ও কৃষিপ্রযুক্তি প্ল্যাটফর্ম" />
     <meta property="og:description" content="বাংলাদেশের আধুনিক কৃষি, শস্যবিজ্ঞান, ড্রোন সেন্সিং ও এগ্রি-টেক উদ্ভাবনের প্ল্যাটফর্ম।" />
     <meta property="og:image" content="/logos/English.png" />
+    <script>
+      if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js').catch(function() {});
+        });
+      }
+    </script>
     <style>
       html, body { height: 100%; margin: 0; background-color: #fdfaf5; }
       #root { min-height: 100%; }

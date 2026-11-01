@@ -3,16 +3,19 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 import { Toaster, toast } from 'sonner';
 import { ArrowLeft, PenLine } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { getStoredAuthUser, logoutUser } from '../lib/auth';
 import {
   readSnapshot, writeSnapshot, fetchFromSupabase, syncLocalToSupabase, mutateSnapshotReaction,
+  DEFAULT_SEED_SNAPSHOT,
   dbUpsertProfile, dbUpsertArticle, dbUpsertPost, dbInsertComment, dbSetReaction,
   dbUpsertReel, dbUpsertStory, dbUpsertProduct, dbInsertOrder, dbUpsertEvent,
-  dbUpsertResearchPaper, dbUpsertIdea,
+  dbUpsertResearchPaper, dbUpsertIdea, dbDeletePost, dbDeleteArticle, dbDeleteStory,
+  dbUpdateNotificationRead, dbDeleteNotification, dbMarkAllNotificationsRead, dbInsertNotification,
   type DatabaseSnapshot, type SupabaseConnectionStatus,
 } from '../lib/db';
 import type {
   Article, BkashOrder, CommunityPost, LightboxPayload, LinkedInReactionType,
-  ReactionTargetType, ResearchPaper, StoryReel, StoreProduct, TopicStory, UpcomingEvent, UserProfile,
+  NotificationItem, ReactionTargetType, ResearchPaper, StoryReel, StoreProduct, TopicStory, UpcomingEvent, UserProfile,
 } from '../types';
 import {
   toggleBookmarkId, appendArticleComment, appendPostComment, makeComment, toBengaliNumerals,
@@ -35,7 +38,7 @@ import { ReactionBreakdownModal } from './LinkedInReactionBar';
 import { SiteLoader } from './SiteLoader';
 import { EventRegistrationModal } from './EventRegistrationModal';
 import { EventDetailPage } from './EventDetailPage';
-import { Footer } from './Footer';
+import { AuthModal } from './AuthModal';
 import { FEED_CARD, cn } from './Primitives';
 
 export function RootShell() {
@@ -46,7 +49,19 @@ export function RootShell() {
   const [snap, setSnap] = useState<DatabaseSnapshot>(() => readSnapshot());
   const [supaStatus, setSupaStatus] = useState<SupabaseConnectionStatus>('checking');
   const [supaError, setSupaError] = useState<string | undefined>();
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('plainsyt_dark_theme');
+      if (saved !== null) return saved === 'true';
+      return document.documentElement.classList.contains('dark');
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark);
+    localStorage.setItem('plainsyt_dark_theme', String(dark));
+  }, [dark]);
 
   // Active modals/popups
   const [writeOpen, setWriteOpen] = useState(false);
@@ -89,45 +104,113 @@ export function RootShell() {
         refreshFromSupabase();
       })
       .subscribe();
+
+    const { data: authSub } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const u = session.user;
+        const profile: UserProfile = {
+          id: u.id,
+          name: u.user_metadata?.full_name || u.email?.split('@')[0] || 'PLAiNSYT Member',
+          nameBn: u.user_metadata?.full_name || u.email?.split('@')[0] || 'সদস্য',
+          handle: (u.email?.split('@')[0] || 'user').toLowerCase().replace(/[^a-z0-9_]/g, '_'),
+          role: 'সদস্য',
+          organization: 'PLAiNSYT Platform',
+          location: 'বাংলাদেশ',
+          bio: 'PLAiNSYT কমিউনিটি সদস্য।',
+          avatar: u.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${u.id}`,
+          coverGradient: 'linear-gradient(135deg, #061621 0%, #00ED64 100%)',
+          isVerified: false,
+          focusArea: 'কৃষি ও প্রযুক্তি',
+          publicationsCount: 0,
+          followersCount: 0,
+          followingCount: 0,
+        };
+        commit((prev) => {
+          const exists = prev.profiles.some((p) => p.id === profile.id);
+          const profiles = exists
+            ? prev.profiles.map((p) => (p.id === profile.id ? { ...p, ...profile } : p))
+            : [profile, ...prev.profiles];
+          return { ...prev, profiles, currentUserId: profile.id };
+        });
+        dbUpsertProfile(profile);
+      }
+    });
+
     return () => {
       supabase.removeChannel(channel);
+      authSub?.subscription.unsubscribe();
     };
-  }, [refreshFromSupabase]);
+  }, [refreshFromSupabase, commit]);
 
-  const currentUser = useMemo(
-    () => snap.profiles.find((p) => p.id === snap.currentUserId) ?? snap.profiles[0] ?? null,
-    [snap.profiles, snap.currentUserId],
-  );
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authPromptReason, setAuthPromptReason] = useState<string | undefined>();
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
-  // Ensure a profile exists when an action requires an author/actor
+  const currentUser = useMemo(() => {
+    const stored = getStoredAuthUser();
+    const activeId = snap.currentUserId || stored?.id;
+    if (!activeId) return null;
+    return snap.profiles.find((p) => p.id === activeId) ?? null;
+  }, [snap.profiles, snap.currentUserId]);
+
   const ensureActor = useCallback((): UserProfile => {
     if (currentUser) return currentUser;
-    const autoProfile: UserProfile = {
-      id: `u-${Date.now().toString(36)}`,
-      name: 'Plainsyt Member',
-      nameBn: 'প্লেইনসাইট সদস্য',
-      handle: `member.${Date.now().toString(36).slice(-4)}`,
-      role: 'Agri-Tech Researcher',
-      organization: 'Plainsyt',
-      location: 'Bangladesh',
+    return {
+      id: 'usr-guest',
+      name: 'অতিথি ব্যবহারকারী',
+      nameBn: 'অতিথি ব্যবহারকারী',
+      handle: 'guest',
+      role: 'পাঠক',
+      organization: 'PLAiNSYT',
+      location: 'বাংলাদেশ',
       bio: '',
-      avatar: 'PM',
+      avatar: '/logos/icon.png',
       coverGradient: 'linear-gradient(135deg, #04301f 0%, #17754f 55%, #f2c14e 100%)',
-      isVerified: true,
-      focusArea: 'Agri-Tech & Agronomy',
+      isVerified: false,
+      focusArea: '',
       publicationsCount: 0,
       followersCount: 0,
       followingCount: 0,
       createdAt: new Date().toISOString(),
     };
-    commit((prev) => ({
-      ...prev,
-      profiles: [autoProfile, ...prev.profiles],
-      currentUserId: autoProfile.id,
-    }));
-    dbUpsertProfile(autoProfile);
-    return autoProfile;
-  }, [currentUser, commit]);
+  }, [currentUser]);
+
+  const requestAuth = useCallback((reason: string, onAuthed?: () => void) => {
+    setAuthPromptReason(reason);
+    if (onAuthed) {
+      setPendingAction(() => onAuthed);
+    } else {
+      setPendingAction(null);
+    }
+    setAuthModalOpen(true);
+  }, []);
+
+  const handleAuthSuccess = useCallback(
+    (profile: UserProfile) => {
+      commit((prev) => ({
+        ...prev,
+        profiles: prev.profiles.some((p) => p.id === profile.id)
+          ? prev.profiles.map((p) => (p.id === profile.id ? profile : p))
+          : [profile, ...prev.profiles],
+        currentUserId: profile.id,
+      }));
+      setAuthModalOpen(false);
+      toast.success(`স্বাগতম, ${profile.name}!`);
+      if (pendingAction) {
+        setTimeout(() => {
+          pendingAction();
+          setPendingAction(null);
+        }, 100);
+      }
+    },
+    [commit, pendingAction],
+  );
+
+  const handleLogout = useCallback(async () => {
+    await logoutUser();
+    commit((prev) => ({ ...prev, currentUserId: '' }));
+    toast.success('সফলভাবে সাইন আউট হয়েছে');
+  }, [commit]);
 
   const activeView: View = useMemo(() => {
     const p = location.pathname;
@@ -159,16 +242,33 @@ export function RootShell() {
     [navigate],
   );
 
-  const toggleDark = () =>
-    setDark((d) => {
-      document.documentElement.classList.toggle('dark', !d);
-      return !d;
-    });
+  const toggleDark = () => setDark((prev) => !prev);
 
-  // LinkedIn Reaction Handler (persists to Supabase)
+  // Global clipboard copy notification toast in Bengali
+  useEffect(() => {
+    const handleCopy = () => {
+      const selection = window.getSelection()?.toString().trim();
+      if (selection) {
+        toast.success('লেখা কপি করা হয়েছে', {
+          description: selection.length > 35 ? `${selection.slice(0, 32)}...` : selection,
+          duration: 2200,
+        });
+      }
+    };
+    window.addEventListener('copy', handleCopy);
+    return () => window.removeEventListener('copy', handleCopy);
+  }, []);
+
+  // LinkedIn Reaction Handler (Context-preserving auth + notification trigger)
   const handleReact = useCallback(
     (targetType: ReactionTargetType, targetId: string, chosen: LinkedInReactionType) => {
-      const actor = ensureActor();
+      if (!currentUser) {
+        requestAuth('প্রতিক্রিয়া (Reaction) প্রকাশ করতে দয়া করে লগইন বা সাইন আপ করুন।', () => {
+          handleReact(targetType, targetId, chosen);
+        });
+        return;
+      }
+      const actor = currentUser;
       let result: ReturnType<typeof mutateSnapshotReaction> | null = null;
       commit((prev) => {
         result = mutateSnapshotReaction(prev, targetType, targetId, actor, chosen);
@@ -177,13 +277,57 @@ export function RootShell() {
       if (result) {
         const { finalReaction, counts, total } = result;
         dbSetReaction(targetType, targetId, actor, finalReaction, counts, total);
+
+        // Send notification to author if reacting positively and author is another user
+        if (finalReaction) {
+          let authorId = '';
+          let targetTitle = '';
+          if (targetType === 'article') {
+            const art = snap.articles.find((a) => a.id === targetId);
+            authorId = art?.authorId || art?.author?.id || '';
+            targetTitle = art?.title ?? 'প্রবন্ধ';
+          } else if (targetType === 'post') {
+            const post = snap.posts.find((p) => p.id === targetId);
+            authorId = post?.authorId || post?.author?.id || '';
+            targetTitle = post?.content.slice(0, 30) ?? 'পোস্ট';
+          }
+          // Ultra guard: Never notify self for own actions
+          if (authorId && authorId !== actor.id) {
+            const notif: NotificationItem = {
+              id: `notif-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+              recipientId: authorId,
+              userId: authorId,
+              actorId: actor.id,
+              actorName: actor.name,
+              actorAvatar: actor.avatar,
+              type: 'reaction',
+              entityType: targetType === 'comment' ? 'comment' : targetType,
+              entityId: targetId,
+              targetUrl: targetType === 'article' ? `/article/${targetId}` : `/#post-${targetId}`,
+              message: `${actor.name} আপনার "${targetTitle}" বিষয়ে প্রতিক্রিয়া জানিয়েছেন।`,
+              title: 'নতুন প্রতিক্রিয়া',
+              source: actor.name,
+              time: 'মাত্র এখন',
+              isRead: false,
+              unread: true,
+              createdAt: new Date().toISOString(),
+            };
+            dbInsertNotification(notif);
+          }
+        }
       }
     },
-    [commit, ensureActor],
+    [commit, currentUser, requestAuth, snap.articles, snap.posts],
   );
 
   const handleBookmarkArticle = useCallback(
     (articleId: string) => {
+      if (!currentUser) {
+        requestAuth('প্রবন্ধ সংরক্ষণ (Bookmark) করতে দয়া করে লগইন বা সাইন আপ করুন।', () => {
+          handleBookmarkArticle(articleId);
+        });
+        return;
+      }
       const was = snap.bookmarkedArticleIds.includes(articleId);
       commit((prev) => ({
         ...prev,
@@ -191,12 +335,18 @@ export function RootShell() {
       }));
       toast(was ? 'সংরক্ষিত তালিকা থেকে সরানো হয়েছে' : 'সংরক্ষিত তালিকায় যোগ হয়েছে');
     },
-    [snap.bookmarkedArticleIds, commit],
+    [currentUser, snap.bookmarkedArticleIds, commit, requestAuth],
   );
 
   const handleCommentArticle = useCallback(
     (articleId: string, text: string) => {
-      const actor = ensureActor();
+      if (!currentUser) {
+        requestAuth('মন্তব্য করতে দয়া করে আপনার অ্যাকাউন্টে লগইন করুন।', () => {
+          handleCommentArticle(articleId, text);
+        });
+        return;
+      }
+      const actor = currentUser;
       const newComment = makeComment(text, actor, 'article', articleId);
       let updatedArticle: Article | undefined;
       commit((prev) => {
@@ -213,13 +363,45 @@ export function RootShell() {
       });
       dbInsertComment(newComment);
       if (updatedArticle) dbUpsertArticle(updatedArticle);
+
+      // Trigger notification to author (only if recipient is another user)
+      const art = snap.articles.find((a) => a.id === articleId);
+      const authorId = art?.authorId || art?.author?.id || '';
+      if (authorId && authorId !== actor.id) {
+        const notif: NotificationItem = {
+          id: `notif-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+          recipientId: authorId,
+          userId: authorId,
+          actorId: actor.id,
+          actorName: actor.name,
+          actorAvatar: actor.avatar,
+          type: 'comment',
+          entityType: 'article',
+          entityId: articleId,
+          targetUrl: `/article/${articleId}`,
+          message: `${actor.name} আপনার "${art?.title ?? 'প্রতিবেদন'}" প্রতিবেদনে মন্তব্য করেছেন: "${text.slice(0, 35)}..."`,
+          title: 'নতুন মন্তব্য',
+          source: actor.name,
+          time: 'মাত্র এখন',
+          isRead: false,
+          unread: true,
+          createdAt: new Date().toISOString(),
+        };
+        dbInsertNotification(notif);
+      }
     },
-    [commit, ensureActor],
+    [commit, currentUser, requestAuth, snap.articles],
   );
 
   const handleCommentPost = useCallback(
     (postId: string, text: string) => {
-      const actor = ensureActor();
+      if (!currentUser) {
+        requestAuth('পোস্টে মন্তব্য করতে দয়া করে আপনার অ্যাকাউন্টে লগইন করুন।', () => {
+          handleCommentPost(postId, text);
+        });
+        return;
+      }
+      const actor = currentUser;
       const newComment = makeComment(text, actor, 'post', postId);
       let updatedPost: CommunityPost | undefined;
       commit((prev) => {
@@ -236,17 +418,166 @@ export function RootShell() {
       });
       dbInsertComment(newComment);
       if (updatedPost) dbUpsertPost(updatedPost);
+
+      // Trigger notification to post author (only if recipient is another user)
+      const post = snap.posts.find((p) => p.id === postId);
+      const authorId = post?.authorId || post?.author?.id || '';
+      if (authorId && authorId !== actor.id) {
+        const notif: NotificationItem = {
+          id: `notif-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+          recipientId: authorId,
+          userId: authorId,
+          actorId: actor.id,
+          actorName: actor.name,
+          actorAvatar: actor.avatar,
+          type: 'comment',
+          entityType: 'post',
+          entityId: postId,
+          targetUrl: `/#post-${postId}`,
+          message: `${actor.name} আপনার পোস্টে মন্তব্য করেছেন: "${text.slice(0, 35)}..."`,
+          title: 'নতুন মন্তব্য',
+          source: actor.name,
+          time: 'মাত্র এখন',
+          isRead: false,
+          unread: true,
+          createdAt: new Date().toISOString(),
+        };
+        dbInsertNotification(notif);
+      }
     },
-    [commit, ensureActor],
+    [commit, currentUser, requestAuth, snap.posts],
   );
 
   const handleSavePost = useCallback(
     (postId: string) => {
+      if (!currentUser) {
+        requestAuth('পোস্ট সংরক্ষণ করতে দয়া করে লগইন করুন।', () => {
+          handleSavePost(postId);
+        });
+        return;
+      }
       commit((prev) => ({
         ...prev,
         posts: prev.posts.map((p) => (p.id === postId ? { ...p, userSaved: !p.userSaved } : p)),
       }));
       toast('পোস্ট সংরক্ষণ আপডেট হয়েছে');
+    },
+    [currentUser, commit, requestAuth],
+  );
+
+  const handleCommentStoryOrReel = useCallback(
+    (targetId: string, text: string) => {
+      if (!currentUser) {
+        requestAuth('মন্তব্য করতে অনুগ্রহ করে আপনার অ্যাকাউন্টে লগইন করুন।', () => {
+          handleCommentStoryOrReel(targetId, text);
+        });
+        return;
+      }
+      const newComment = makeComment(text, currentUser, 'reel', targetId);
+      commit((prev) => ({
+        ...prev,
+        comments: [newComment, ...prev.comments],
+      }));
+      dbInsertComment(newComment);
+      toast.success('মন্তব্য প্রকাশ করা হয়েছে');
+    },
+    [commit, currentUser, requestAuth],
+  );
+
+  const handleReactStoryOrReel = useCallback(
+    (targetId: string) => {
+      if (!currentUser) {
+        requestAuth('প্রতিক্রিয়া প্রকাশ করতে অনুগ্রহ করে লগইন করুন।');
+        return;
+      }
+      handleReact('reel', targetId, 'like');
+    },
+    [currentUser, requestAuth, handleReact],
+  );
+
+  const handleBookmarkStoryOrReel = useCallback(
+    (targetId: string) => {
+      if (!currentUser) {
+        requestAuth('স্টোরি সংরক্ষণ করতে অনুগ্রহ করে লগইন করুন।');
+        return;
+      }
+      toast.success('স্টোরিটি সংরক্ষিত তালিকায় যুক্ত হয়েছে');
+    },
+    [currentUser, requestAuth],
+  );
+
+  // Notification management operations
+  const handleToggleNotificationRead = useCallback(
+    (id: string, isRead: boolean) => {
+      commit((prev) => ({
+        ...prev,
+        notifications: prev.notifications.map((n) =>
+          n.id === id ? { ...n, isRead, unread: !isRead } : n,
+        ),
+      }));
+      dbUpdateNotificationRead(id, isRead);
+    },
+    [commit],
+  );
+
+  const handleDeleteNotification = useCallback(
+    (id: string) => {
+      commit((prev) => ({
+        ...prev,
+        notifications: prev.notifications.filter((n) => n.id !== id),
+      }));
+      dbDeleteNotification(id);
+      toast.success('বিজ্ঞপ্তিটি মুছে ফেলা হয়েছে');
+    },
+    [commit],
+  );
+
+  const handleReadAllNotifications = useCallback(() => {
+    commit((prev) => ({
+      ...prev,
+      notifications: prev.notifications.map((n) => ({ ...n, isRead: true, unread: false })),
+    }));
+    if (currentUser) {
+      dbMarkAllNotificationsRead(currentUser.id);
+    }
+    toast.success('সকল বিজ্ঞপ্তি পড়া হয়েছে চিহ্নিত করা হলো');
+  }, [commit, currentUser]);
+
+  // Content deletion operations
+  const handleDeletePost = useCallback(
+    (postId: string) => {
+      commit((prev) => ({
+        ...prev,
+        posts: prev.posts.filter((p) => p.id !== postId),
+        comments: prev.comments.filter((c) => !(c.targetType === 'post' && c.targetId === postId)),
+      }));
+      dbDeletePost(postId);
+      toast.success('পোস্টটি মুছে ফেলা হয়েছে');
+    },
+    [commit],
+  );
+
+  const handleDeleteStory = useCallback(
+    (storyId: string) => {
+      commit((prev) => ({
+        ...prev,
+        stories: prev.stories.filter((s) => s.id !== storyId),
+      }));
+      dbDeleteStory(storyId);
+      toast.success('স্টোরিটি মুছে ফেলা হয়েছে');
+    },
+    [commit],
+  );
+
+  const handleDeleteArticle = useCallback(
+    (articleId: string) => {
+      commit((prev) => ({
+        ...prev,
+        articles: prev.articles.filter((a) => a.id !== articleId),
+        comments: prev.comments.filter((c) => !(c.targetType === 'article' && c.targetId === articleId)),
+      }));
+      dbDeleteArticle(articleId);
+      toast.success('প্রতিবেদনটি মুছে ফেলা হয়েছে');
     },
     [commit],
   );
@@ -450,7 +781,7 @@ export function RootShell() {
         creator: r.creator,
         avatar: r.creatorAvatar,
         image: r.mediaUrl,
-        meta: `${r.location} · ${r.duration}`,
+        meta: r.duration,
         likes: r.likes,
       })),
     [snap.reels],
@@ -464,7 +795,7 @@ export function RootShell() {
         creator: s.authorName ?? 'Plainsyt',
         avatar: s.authorAvatar ?? 'PS',
         image: s.imageUrl,
-        meta: `${s.category} · ${s.readsCount ?? 0} reads`,
+        meta: s.category,
         likes: 0,
       })),
     [snap.stories],
@@ -478,7 +809,10 @@ export function RootShell() {
   const savedCount = savedArticles.length + savedPosts.length;
   const cartCount = useMemo(() => snap.cart.reduce((s, c) => s + c.quantity, 0), [snap.cart]);
   const readerArticle = useMemo(
-    () => snap.articles.find((a) => a.id === readerId) ?? null,
+    () =>
+      snap.articles.find((a) => a.id === readerId || a.slug === readerId) ??
+      DEFAULT_SEED_SNAPSHOT.articles.find((a) => a.id === readerId || a.slug === readerId) ??
+      null,
     [snap.articles, readerId],
   );
 
@@ -513,10 +847,28 @@ export function RootShell() {
     return null;
   }, [params.userId, currentUser, snap.profiles, snap.articles]);
 
+  // User's strictly received notifications (prevents self-notifications completely)
+  const userNotifications = useMemo(() => {
+    if (!currentUser) return [];
+    return snap.notifications.filter((n) => {
+      const recipient = n.recipientId || n.userId;
+      const isRecipient = recipient === currentUser.id;
+      const isSelfAction = Boolean(n.actorId && n.actorId === currentUser.id);
+      return isRecipient && !isSelfAction;
+    });
+  }, [currentUser, snap.notifications]);
+
   // Standalone /article/:articleId route (for opening in a separate browser tab!)
   const standaloneArticle = useMemo(() => {
     if (!params.articleId) return null;
-    return snap.articles.find((a) => a.id === params.articleId) ?? null;
+    const fromSnap =
+      snap.articles.find((a) => a.id === params.articleId || a.slug === params.articleId) ?? null;
+    if (fromSnap) return fromSnap;
+    return (
+      DEFAULT_SEED_SNAPSHOT.articles.find(
+        (a) => a.id === params.articleId || a.slug === params.articleId,
+      ) ?? null
+    );
   }, [params.articleId, snap.articles]);
 
   const openPhotoPopup = useCallback(
@@ -603,10 +955,18 @@ export function RootShell() {
     }
 
     if (location.pathname.startsWith('/events/') && location.pathname !== '/events') {
-      const eventId = location.pathname.replace('/events/', '');
+      const eventId = decodeURIComponent(location.pathname.replace('/events/', ''));
+      const foundEvent = snap.events.find((e) => e.id === eventId);
+      const isReg = snap.eventRegistrations.some(
+        (id) => id === eventId,
+      ) || (foundEvent ? foundEvent.isRegistered : false);
       return (
         <EventDetailPage
           eventId={eventId}
+          event={foundEvent}
+          events={snap.events}
+          isRegistered={isReg}
+          onBack={() => goNavigate('/events')}
           onNavigate={goNavigate}
           onOpenRegister={(ev) => setRegistrationEvent(ev)}
         />
@@ -696,13 +1056,13 @@ export function RootShell() {
       case 'notifications':
         return (
           <NotificationsView
-            items={snap.notifications}
-            onRead={() =>
-              commit((prev) => ({
-                ...prev,
-                notifications: prev.notifications.map((n) => ({ ...n, unread: false })),
-              }))
-            }
+            items={userNotifications}
+            onRead={handleReadAllNotifications}
+            onToggleRead={handleToggleNotificationRead}
+            onDelete={handleDeleteNotification}
+            onNavigate={goNavigate}
+            onOpenArticle={handleOpenArticlePopup}
+            onNavigateProfile={navigateToProfile}
           />
         );
       case 'profile': {
@@ -710,6 +1070,7 @@ export function RootShell() {
         const targetId = viewedProfile?.id || '';
         const authorArticles = snap.articles.filter((a) => a.authorId === targetId);
         const authorPosts = snap.posts.filter((p) => p.authorId === targetId);
+        const authorStories = snap.stories.filter((s) => s.authorId === targetId);
         const userOrders = snap.orders.filter((o) => !currentUser || o.buyerId === currentUser.id);
         return (
           <ProfileView
@@ -719,6 +1080,7 @@ export function RootShell() {
             currentUser={currentUser}
             authorArticles={authorArticles}
             authorPosts={authorPosts}
+            authorStories={authorStories}
             savedArticles={savedArticles}
             savedPosts={savedPosts}
             orders={userOrders}
@@ -727,6 +1089,8 @@ export function RootShell() {
             onToggleDark={toggleDark}
             onToggleFollow={() => handleToggleFollow(targetId)}
             onOpenProfileSettings={() => setProfileSettingsOpen(true)}
+            onOpenAuth={() => requestAuth('লগইন বা সাইন আপ করুন')}
+            onLogout={handleLogout}
             onOpenArticlePopup={handleOpenArticlePopup}
             onReact={handleReact}
             onOpenReactionsBreakdown={(targetType, tId) => setRxBreakdown({ targetType, targetId: tId })}
@@ -739,6 +1103,30 @@ export function RootShell() {
             onRemoveSavedPost={handleSavePost}
             onNavigateProfile={navigateToProfile}
             onOpenPhoto={openPhotoPopup}
+            onOpenCreatePost={() => {
+              if (!currentUser) {
+                requestAuth('পোস্ট তৈরি করতে দয়া করে লগইন করুন।', () => setReelUploadOpen(true));
+              } else {
+                setReelUploadOpen(true);
+              }
+            }}
+            onOpenCreateStory={() => {
+              if (!currentUser) {
+                requestAuth('স্টোরি তৈরি করতে দয়া করে লগইন করুন।', () => setReelUploadOpen(true));
+              } else {
+                setReelUploadOpen(true);
+              }
+            }}
+            onOpenWriteArticle={() => {
+              if (!currentUser) {
+                requestAuth('প্রতিবেদন লিখতে দয়া করে লগইন করুন।', () => setWriteOpen(true));
+              } else {
+                setWriteOpen(true);
+              }
+            }}
+            onDeletePost={handleDeletePost}
+            onDeleteStory={handleDeleteStory}
+            onDeleteArticle={handleDeleteArticle}
           />
         );
       }
@@ -803,7 +1191,7 @@ export function RootShell() {
   const isHomePage = activeView === 'home' && location.pathname === '/';
 
   return (
-    <div className={cn('min-h-screen bg-canvas text-slate-900 flex flex-col justify-between', dark && 'dark')}>
+    <div className={cn('min-h-screen bg-canvas text-slate-900 dark:text-white flex flex-col justify-between', dark && 'dark')}>
       <SiteLoader />
       <Header
         activeView={activeView}
@@ -824,13 +1212,12 @@ export function RootShell() {
           }
         }}
         onOpenAI={() => setAiOpen(true)}
-        notifications={snap.notifications}
-        onReadNotifications={() =>
-          commit((prev) => ({
-            ...prev,
-            notifications: prev.notifications.map((n) => ({ ...n, unread: false })),
-          }))
-        }
+        notifications={userNotifications}
+        onReadNotifications={handleReadAllNotifications}
+        onToggleNotificationRead={handleToggleNotificationRead}
+        onDeleteNotification={handleDeleteNotification}
+        onOpenAuth={() => requestAuth('লগইন বা সাইন আপ করুন')}
+        onLogout={handleLogout}
         articles={snap.articles}
         posts={snap.posts}
         onOpenArticle={handleOpenArticlePopup}
@@ -838,7 +1225,7 @@ export function RootShell() {
       />
 
       {isHomePage ? (
-        <div className="mx-auto grid max-w-[1400px] grid-cols-1 lg:grid-cols-[210px_minmax(0,1fr)_260px] gap-5 pt-2 sm:px-4 sm:pt-4">
+        <div className="relative w-full min-h-[calc(100vh-65px)]">
           <LeftSidebar
             currentUser={currentUser}
             articles={snap.articles}
@@ -851,12 +1238,15 @@ export function RootShell() {
             }}
             onOpenAI={() => setAiOpen(true)}
             onOpenProfileSettings={() => setProfileSettingsOpen(true)}
+            onOpenAuth={() => requestAuth('লগইন বা সাইন আপ করুন')}
             onNavigate={goNavigate}
             activePillar={pillar}
             onPillar={setPillar}
           />
 
-          <main className="min-w-0 pb-10">{mainContent}</main>
+          <main className="min-w-0 pb-12 pt-3 px-3 sm:px-4 lg:ml-56 xl:ml-64 lg:mr-68 xl:mr-76 max-w-2xl xl:max-w-3xl mx-auto">
+            {mainContent}
+          </main>
 
           <RightSidebar
             articles={snap.articles}
@@ -887,12 +1277,28 @@ export function RootShell() {
           />
         </div>
       ) : (
-        <div className="mx-auto max-w-4xl px-4 pt-4 pb-12 min-w-0 flex-1">
-          <main className="min-w-0">{mainContent}</main>
+        <div className="relative w-full min-h-[calc(100vh-65px)]">
+          <LeftSidebar
+            currentUser={currentUser}
+            articles={snap.articles}
+            reels={snap.reels}
+            savedCount={savedCount}
+            onOpenSaved={() => setSavedOpen(true)}
+            onOpenReels={() => {
+              if (reelPlayerItems.length > 0) setPlayer({ items: reelPlayerItems, start: 0 });
+              else setReelUploadOpen(true);
+            }}
+            onOpenAI={() => setAiOpen(true)}
+            onOpenProfileSettings={() => setProfileSettingsOpen(true)}
+            onNavigate={goNavigate}
+            activePillar={pillar}
+            onPillar={setPillar}
+          />
+          <main className="min-w-0 pb-12 pt-4 px-4 lg:ml-56 xl:ml-64 max-w-4xl mx-auto">
+            {mainContent}
+          </main>
         </div>
       )}
-
-      <Footer />
 
       {/* Modals & Popups */}
       <CreatePostModal
@@ -943,8 +1349,14 @@ export function RootShell() {
       <ReelPlayerModal
         items={player?.items ?? null}
         start={player?.start ?? 0}
+        currentUser={currentUser}
+        comments={snap.comments}
         onClose={() => setPlayer(null)}
         onShare={handleShare}
+        onOpenAuth={() => requestAuth('মন্তব্য বা প্রতিক্রিয়া জানাতে অনুগ্রহ করে লগইন করুন')}
+        onComment={handleCommentStoryOrReel}
+        onReactStory={handleReactStoryOrReel}
+        onBookmarkStory={handleBookmarkStoryOrReel}
       />
 
       <PhotoLightboxModal
@@ -1013,6 +1425,17 @@ export function RootShell() {
           }));
           toast.success('রেজিস্ট্রেশন সম্পন্ন হয়েছে! আপনার আসন নিশ্চিত।');
         }}
+      />
+
+      <AuthModal
+        open={authModalOpen}
+        promptReason={authPromptReason}
+        reason={authPromptReason}
+        onClose={() => {
+          setAuthModalOpen(false);
+          setPendingAction(null);
+        }}
+        onSuccess={handleAuthSuccess}
       />
 
       <Toaster

@@ -63,6 +63,8 @@ function answer(q: string) {
   );
 }
 
+import { queryPlainsytAI } from '../lib/aiService';
+
 export function AskAIModal({
   open,
   onClose,
@@ -75,7 +77,8 @@ export function AskAIModal({
   const [msgs, setMsgs] = useState<Msg[]>([
     {
       role: 'ai',
-      text: 'আসসালামু আলাইকুম! আমি Plainsyt AI কৃষি সহকারী। মাটি, ফসল, রোগবালাই বা কৃষিপ্রযুক্তি — যেকোনো প্রশ্ন বাংলায় করুন।',
+      text: 'আসসালামু আলাইকুম! আমি Plainsyt AI কৃষি সহকারী। মাটি, ফসল, রোগবালাই, ড্রোন সেন্সিং বা কৃষিপ্রযুক্তি — যেকোনো প্রশ্ন বাংলায় করতে পারেন।',
+      source: 'PLAiNSYT AI · OpenRouter Connected',
     },
   ]);
   const [input, setInput] = useState('');
@@ -89,32 +92,40 @@ export function AskAIModal({
   }, [msgs, typing, thinking]);
   useEffect(() => () => window.clearInterval(timer.current), []);
 
-  const ask = (q: string) => {
+  const ask = async (q: string) => {
     if (!q.trim() || thinking || typing !== null) return;
-    setMsgs((m) => [...m, { role: 'user', text: q.trim() }]);
+    const userMsg = q.trim();
+    setMsgs((m) => [...m, { role: 'user', text: userMsg }]);
     setInput('');
     setThinking(true);
-    const res = answer(q);
-    window.setTimeout(() => {
+
+    try {
+      const res = await queryPlainsytAI(userMsg, msgs);
       setThinking(false);
       let i = 0;
       setTyping('');
       timer.current = window.setInterval(() => {
-        i += 3;
+        i += 6;
         if (i >= res.answer.length) {
           window.clearInterval(timer.current);
           setTyping(null);
           setMsgs((m) => [...m, { role: 'ai', text: res.answer, source: res.source }]);
-        } else setTyping(res.answer.slice(0, i));
-      }, 16);
-    }, 550);
+        } else {
+          setTyping(res.answer.slice(0, i));
+        }
+      }, 14);
+    } catch {
+      setThinking(false);
+      const fallback = answer(userMsg);
+      setMsgs((m) => [...m, { role: 'ai', text: fallback.answer, source: fallback.source }]);
+    }
   };
 
   return (
     <Modal open={open} onClose={onClose} className="max-w-[640px]" labelledBy="ai-title">
-      <div className="flex h-[88dvh] flex-col overflow-hidden rounded-t-2xl border border-pine-900 bg-canvas-card shadow-tactile-lg sm:h-[78vh] sm:rounded-2xl">
-        <div className="flex items-center gap-3 border-b border-pine-900 bg-[#04301f] px-4 py-3 text-white">
-          <span className="flex size-10 items-center justify-center rounded-full bg-[#f2c14e] text-[#04301f]">
+      <div className="flex h-[88dvh] flex-col overflow-hidden rounded-t-3xl border border-slate-200/80 dark:border-white/10 bg-canvas-card shadow-2xl sm:h-[78vh] sm:rounded-3xl">
+        <div className="flex items-center gap-3 border-b border-white/10 bg-[#041d13] px-5 py-3.5 text-white">
+          <span className="flex size-10 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
             <Sparkles className="size-5" />
           </span>
           <div className="flex-1">
@@ -124,13 +135,13 @@ export function AskAIModal({
                 AI কৃষি সহকারী
               </h2>
             </div>
-            <p className="font-mono text-[10px] tracking-wider opacity-75">
+            <p className="font-mono text-[10px] tracking-wider text-emerald-300/80">
               BRRI · BARI · SRDI সূত্রভিত্তিক · 24/7
             </p>
           </div>
           <CloseButton onClick={onClose} className="bg-white/10 text-white hover:bg-white/20" />
         </div>
-        <div className="paper-grain flex-1 space-y-4 overflow-y-auto px-4 py-5">
+        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
           {msgs.map((m, i) => (
             <div key={i} className={cn('flex gap-2.5', m.role === 'user' && 'flex-row-reverse')}>
               {m.role === 'ai' ? (
@@ -211,13 +222,13 @@ export function AskAIModal({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="আপনার প্রশ্ন লিখুন…"
-              className="h-11 flex-1 rounded-xl border border-pine-900 bg-canvas-card px-4 font-bangla text-[14.5px] text-pine-900 outline-none placeholder:text-pine-900/40 focus:ring-2 focus:ring-pine-400/40"
+              className="h-11 flex-1 rounded-full border border-slate-200/80 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-4 font-bangla text-[14.5px] text-slate-900 dark:text-white outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white dark:focus:bg-canvas-card transition"
             />
             <button
               type="submit"
               disabled={!input.trim()}
               aria-label="Send"
-              className="flex size-11 items-center justify-center rounded-xl border border-pine-900 bg-pine-900 text-canvas shadow-tactile-sm shadow-tactile-hover disabled:opacity-40"
+              className="flex size-11 items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-md disabled:opacity-40 transition"
             >
               <Send className="size-[18px]" />
             </button>

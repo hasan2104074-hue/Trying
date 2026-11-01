@@ -37,39 +37,41 @@ export function TopicStoriesCarousel({
         className="no-scrollbar flex snap-x gap-2 overflow-x-auto px-3 py-1 sm:px-0.5 md:gap-3 md:pb-2"
       >
         {/* Create Story Card (always available to add a Story/Reel to Supabase) */}
-        <button
-          type="button"
-          onClick={onCreate}
-          className="relative flex aspect-[9/16] w-[104px] shrink-0 snap-start flex-col overflow-hidden rounded-xl border border-pine-900 bg-canvas-card shadow-tactile-xs md:aspect-[3/4.4] md:w-[138px]"
-        >
-          <div
-            style={{
-              background:
-                currentUser?.coverGradient ||
-                'linear-gradient(135deg, #04301f 0%, #17754f 55%, #f2c14e 100%)',
-            }}
-            className="flex h-[68%] w-full items-center justify-center"
+        {onCreate && (
+          <button
+            type="button"
+            onClick={onCreate}
+            className="relative flex aspect-[9/16] w-[104px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-slate-200/80 dark:border-white/10 bg-canvas-card shadow-sm hover:shadow-md transition-all md:aspect-[3/4.4] md:w-[138px]"
           >
-            <Avatar
-              src={currentUser?.avatar || 'PS'}
-              name={currentUser?.name || 'User'}
-              size="size-12"
-            />
-          </div>
-          <span className="absolute left-1/2 top-[68%] flex size-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-canvas-card bg-pine-600 text-white">
-            <Plus className="size-5" strokeWidth={3} />
-          </span>
-          <span className="flex flex-1 items-end justify-center pb-2 text-[12px] font-semibold text-pine-900">
-            Create story
-          </span>
-        </button>
+            <div
+              style={{
+                background:
+                  currentUser?.coverGradient ||
+                  'linear-gradient(135deg, #04301f 0%, #17754f 55%, #f2c14e 100%)',
+              }}
+              className="flex h-[68%] w-full items-center justify-center"
+            >
+              <Avatar
+                src={currentUser?.avatar || 'PS'}
+                name={currentUser?.name || 'User'}
+                size="size-12"
+              />
+            </div>
+            <span className="absolute left-1/2 top-[68%] flex size-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-canvas-card bg-pine-600 text-white">
+              <Plus className="size-5" strokeWidth={3} />
+            </span>
+            <span className="flex flex-1 items-end justify-center pb-2 text-[12px] font-semibold text-pine-900">
+              Create story
+            </span>
+          </button>
+        )}
 
         {stories.map((s, i) => {
           const Icon = ICONS[s.iconName] ?? Sprout;
           return (
             <div
               key={s.id}
-              className="group relative aspect-[9/16] w-[104px] shrink-0 snap-start overflow-hidden rounded-xl bg-pine-800 text-left md:aspect-[3/4.4] md:w-[138px] md:border md:border-pine-900 md:shadow-tactile-sm"
+              className="group relative aspect-[9/16] w-[104px] shrink-0 snap-start overflow-hidden rounded-2xl bg-pine-800 text-left md:aspect-[3/4.4] md:w-[138px] md:border md:border-slate-200/80 dark:md:border-white/10 md:shadow-sm md:hover:shadow-md transition-all"
             >
               <button
                 type="button"
@@ -96,11 +98,6 @@ export function TopicStoriesCarousel({
                   <span className="line-clamp-3 text-[12px] font-semibold leading-tight text-white md:text-[12.5px]">
                     {s.title}
                   </span>
-                  {s.readsCount && (
-                    <span className="mt-1 hidden font-mono text-[10px] text-white/70 md:block">
-                      {s.readsCount} reads
-                    </span>
-                  )}
                 </span>
               </button>
               {s.authorName && (
@@ -126,7 +123,7 @@ export function TopicStoriesCarousel({
             type="button"
             onClick={() => scroll(-1)}
             aria-label="Previous"
-            className="absolute left-1 top-1/2 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full border border-pine-900 bg-canvas-card text-pine-900 opacity-0 shadow-tactile-sm transition group-hover/car:opacity-100 md:flex"
+            className="absolute left-1 top-1/2 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200/80 dark:border-white/10 bg-white/95 dark:bg-[#0b1e15]/95 text-slate-800 dark:text-white opacity-0 shadow-md transition group-hover/car:opacity-100 md:flex"
           >
             <ChevronLeft className="size-5" />
           </button>
@@ -134,7 +131,7 @@ export function TopicStoriesCarousel({
             type="button"
             onClick={() => scroll(1)}
             aria-label="Next"
-            className="absolute right-1 top-1/2 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full border border-pine-900 bg-canvas-card text-pine-900 opacity-0 shadow-tactile-sm transition group-hover/car:opacity-100 md:flex"
+            className="absolute right-1 top-1/2 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200/80 dark:border-white/10 bg-white/95 dark:bg-[#0b1e15]/95 text-slate-800 dark:text-white opacity-0 shadow-md transition group-hover/car:opacity-100 md:flex"
           >
             <ChevronRight className="size-5" />
           </button>

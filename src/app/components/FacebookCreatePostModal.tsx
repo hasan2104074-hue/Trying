@@ -116,15 +116,17 @@ export function FacebookCreatePostModal({ open, onClose, currentUser, onSubmitRe
 
   return (
     <Modal open={open} onClose={onClose} className="max-w-[640px]" labelledBy="upload-reel-title">
-      <div className="overflow-hidden rounded-t-2xl border border-pine-900 bg-canvas shadow-tactile-lg sm:rounded-2xl">
-        <div className="flex items-center justify-between border-b border-pine-900 bg-pine-900 px-5 py-3.5 text-canvas">
-          <div className="flex items-center gap-2">
-            <Clapperboard className="size-5 text-[#38b17e]" />
+      <div className="overflow-hidden rounded-t-3xl border border-slate-200/80 dark:border-white/10 bg-canvas-card shadow-2xl sm:rounded-3xl">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 bg-slate-900 px-6 py-4 text-white">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-9 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+              <Clapperboard className="size-5 text-emerald-400" />
+            </div>
             <div>
-              <h2 id="upload-reel-title" className="font-display text-[20px] font-semibold">
+              <h2 id="upload-reel-title" className="font-display text-[19px] font-semibold">
                 Upload Video Reel / Field Story
               </h2>
-              <p className="font-mono text-[10.5px] opacity-75">
+              <p className="font-mono text-[10.5px] text-slate-400">
                 Stored in Supabase · public.reels &amp; public.stories
               </p>
             </div>
@@ -133,9 +135,9 @@ export function FacebookCreatePostModal({ open, onClose, currentUser, onSubmitRe
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+            className="flex size-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
           >
-            <X className="size-5" />
+            <X className="size-4" />
           </button>
         </div>
 
@@ -177,18 +179,6 @@ export function FacebookCreatePostModal({ open, onClose, currentUser, onSubmitRe
                   </option>
                 ))}
               </select>
-            </div>
-            <div>
-              <SectionLabel className="mb-1">Location</SectionLabel>
-              <div className="flex items-center rounded-lg border border-pine-900/25 bg-canvas-card px-2.5">
-                <MapPin className="size-3.5 text-pine-600" />
-                <input
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="দাকোপ, খুলনা"
-                  className="w-full bg-transparent px-1.5 py-2 font-bangla text-[13px] text-pine-900 outline-none"
-                />
-              </div>
             </div>
             <div>
               <SectionLabel className="mb-1">Duration</SectionLabel>
@@ -284,11 +274,11 @@ export function FacebookCreatePostModal({ open, onClose, currentUser, onSubmitRe
             </label>
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-canvas-border pt-3">
+          <div className="flex justify-end gap-2.5 border-t border-slate-100 dark:border-white/10 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="h-10 rounded-lg border border-canvas-border px-4 text-[13px] font-semibold text-pine-900/70"
+              className="h-11 rounded-full px-5 text-[13.5px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition"
             >
               Cancel
             </button>
@@ -296,7 +286,7 @@ export function FacebookCreatePostModal({ open, onClose, currentUser, onSubmitRe
               type="submit"
               disabled={!canSubmit}
               className={cn(
-                'inline-flex h-10 items-center gap-1.5 rounded-lg border border-pine-900 bg-pine-900 px-5 text-[14px] font-semibold text-canvas shadow-tactile-xs disabled:opacity-40',
+                'inline-flex h-11 items-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-700 px-6 text-[14px] font-bold text-white shadow-md disabled:opacity-40 transition',
               )}
             >
               <Video className="size-4" /> Publish to Supabase
