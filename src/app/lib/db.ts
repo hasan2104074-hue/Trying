@@ -31,7 +31,7 @@ export interface DatabaseSnapshot {
   notifications: NotificationItem[];
 }
 
-const STORAGE_KEY = 'plainsyt_clean_mirror_v6';
+const STORAGE_KEY = 'plainsyt_clean_mirror_v7';
 
 export const ADMIN_PROFILE: UserProfile = {
   id: 'usr-plainsyt-admin',
@@ -195,42 +195,6 @@ export const DEFAULT_SEED_SNAPSHOT: DatabaseSnapshot = {
     JAPAN_ROBOT_ARTICLE,
     BINA_ARTICLE,
     {
-      id: 'art-floating-hydroponics-2026',
-      slug: 'floating-bed-hydroponics-climate-resilience-southern-bangladesh',
-      title: 'দক্ষিণাঞ্চলের জলমগ্নতায় ভাসমান ধাপ চাষ: টেকসই জলবায়ু সহনশীল কৃষির নতুন দিগন্ত',
-      subtitle: 'বরিশাল ও গোপালগঞ্জের ঐতিহ্যবাহী বৈরা পদ্ধতি কীভাবে আধুনিক সেন্সর ও পুষ্টি ব্যবস্থাপনায় পুনরুজ্জীবিত হচ্ছে',
-      category: 'পরিবেশ',
-      categoryEn: 'Climate Resilient Agriculture & Hydroponics',
-      imageType: 'floating',
-      coverImageUrl: 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?w=1200&h=675&fit=crop',
-      imageCaption: 'বরিশালের বানারীপাড়ায় আধুনিক সেন্সর নিয়ন্ত্রিত ভাসমান বেডে বিষমুক্ত সবজি আবাদ।',
-      authorId: 'usr-zubair',
-      author: {
-        id: 'usr-zubair',
-        name: 'Zubair Hasan',
-        nameBn: 'জুবায়ের হাসান',
-        designation: 'Research Fellow',
-        organization: 'Bangladesh Agricultural University (BAU)',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&crop=face',
-        isVerified: true,
-      },
-      publishedAt: '৩১ অক্টোবর ২০২৬, ২১:৩০',
-      createdAt: '2026-10-31T21:30:00+06:00',
-      readTimeMinutes: 6,
-      featured: false,
-      content: [
-        'জলবায়ু পরিবর্তনের ফলে বাংলাদেশের দক্ষিণাঞ্চলের নিম্নাঞ্চল ও হাওড় এলাকায় দীর্ঘস্থায়ী জলবদ্ধতা এখন অন্যতম সাধারণ সমস্যা। কিন্তু ঐতিহাসিকভাবে প্রচলিত কচুরিপানা দিয়ে তৈরি ধাপ বা ভাসমান বেড পদ্ধতিকে বৈজ্ঞানিক পদ্ধতিতে উন্নীত করে বছরব্যাপী খাদ্য নিরাপত্তা অর্জন সম্ভব হচ্ছে।',
-        'বাংলাদেশ কৃষি বিশ্ববিদ্যালয়ের সাম্প্রতিক ফিল্ড ট্রায়ালে দেখা গেছে, আইওটি ভিত্তিক পানি ও পিএইচ ট্র্যাকার সমন্বিত ভাসমান বেডে সাধারণ মাটির চাষের চেয়ে ৩০% দ্রুত শাকসবজির ফলন পাওয়া যায়।',
-      ],
-      takeaways: [
-        'ভাসমান ধাপে অতিরিক্ত রাসায়নিক সার প্রয়োজন হয় না, জলজ জৈবসারই মূল শক্তি।',
-        'জলবায়ু উদ্বাস্তু পরিবারগুলোর জন্য স্থায়ী বিকল্প জীবিকার নির্ভরযোগ্য সমাধান।',
-      ],
-      stats: { views: 890, likes: 0, commentsCount: 0, shares: 0 },
-      reactionCounts: {},
-      comments: [],
-    },
-    {
       id: 'art-brri-dhan102-2026',
       slug: 'brri-dhan102-zinc-enriched-boro-rice-haor-revolution',
       title: 'হাওরের আগাম বন্যা ও ব্রি-১০২: জিংকসমৃদ্ধ ধানের নতুন বিপ্লব',
@@ -381,27 +345,7 @@ export const DEFAULT_SEED_SNAPSHOT: DatabaseSnapshot = {
       comments: [],
     },
   ],
-  posts: [
-    {
-      id: 'post-zubair-1',
-      authorId: 'usr-zubair',
-      author: {
-        id: 'usr-zubair',
-        name: 'Zubair Hasan',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&crop=face',
-        role: 'Research Fellow · BAU',
-      },
-      timestamp: '৩ ঘণ্টা আগে',
-      createdAt: '2026-11-01T12:00:00+06:00',
-      content: 'গাজীপুরের ভবানীপুরে বিনার ৫০০ কেসিআই সক্ষমতার গামা ইরেডিয়েশন সেন্টার চালু হওয়া আমাদের ফসল সংগ্রহোত্তর ক্ষতির ক্ষেত্রে এক যুগান্তকারী অগ্রগতি। বিশেষ করে পেঁয়াজ, আলু এবং রসুনের পচনরোধে এবং রপ্তানি সক্ষমতা বাড়াতে এটি বিশাল ভূমিকা রাখবে।',
-      images: [
-        'https://images.unsplash.com/photo-1610560875826-af5b05a96cfa?w=1000&h=600&fit=crop',
-      ],
-      stats: { likes: 0, commentsCount: 0, shares: 0 },
-      reactionCounts: {},
-      comments: [],
-    },
-  ],
+  posts: [],
   comments: [],
   reactions: [],
   reels: [],
@@ -449,14 +393,17 @@ export function readSnapshot(): DatabaseSnapshot {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<DatabaseSnapshot>;
-      const existingArticles = parsed.articles ?? [];
+      const existingArticles = (parsed.articles ?? []).filter(
+        (a) => a.id !== 'art-floating-hydroponics-2026',
+      );
       const mergedArticles = [...existingArticles];
       for (const sa of DEFAULT_SEED_SNAPSHOT.articles) {
         if (!mergedArticles.some((a) => a.id === sa.id)) {
           mergedArticles.unshift(sa);
         }
       }
-      // Purge removed seed events and stories from browser cache
+      // Purge removed seed items from browser cache
+      const cleanPosts = (parsed.posts ?? []).filter((p) => p.id !== 'post-zubair-1');
       const cleanEvents = (parsed.events ?? []).filter(
         (e) => e.id !== 'ev-summit-2026' && e.id !== 'ev-workshop-iot',
       );
@@ -467,6 +414,7 @@ export function readSnapshot(): DatabaseSnapshot {
         ...DEFAULT_SEED_SNAPSHOT,
         ...parsed,
         articles: mergedArticles,
+        posts: cleanPosts,
         events: cleanEvents,
         stories: cleanStories,
       };
@@ -1076,7 +1024,10 @@ export async function fetchFromSupabase(limit = 60): Promise<{
     const seedOnlyArticles = DEFAULT_SEED_SNAPSHOT.articles.filter(
       (sa) => !remoteArticleIds.has(sa.id) && !localOnlyArticles.some((a) => a.id === sa.id),
     );
-    const finalArticles = [...seedOnlyArticles, ...articles, ...localOnlyArticles];
+    const finalArticles = [...seedOnlyArticles, ...articles, ...localOnlyArticles].filter(
+      (a) => a.id !== 'art-floating-hydroponics-2026',
+    );
+    const finalPosts = (posts.length > 0 ? posts : local.posts).filter((p) => p.id !== 'post-zubair-1');
 
     // Filter out removed events and stories
     const cleanEvents = (events.length > 0 ? events : local.events).filter(
@@ -1091,7 +1042,7 @@ export async function fetchFromSupabase(limit = 60): Promise<{
       profiles: profiles.length > 0 ? profiles : local.profiles,
       currentUserId: currentUserId || local.currentUserId,
       articles: finalArticles.length > 0 ? finalArticles : DEFAULT_SEED_SNAPSHOT.articles,
-      posts: posts.length > 0 ? posts : local.posts,
+      posts: finalPosts,
       comments: commentsRes.data !== null && commentsRes.data !== undefined ? comments : local.comments,
       reactions: reactionsRes.data !== null && reactionsRes.data !== undefined ? reactions : local.reactions,
       reels: reels.length > 0 ? reels : local.reels,
